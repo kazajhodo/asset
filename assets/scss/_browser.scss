@@ -1,0 +1,98 @@
+.asset-browser{
+
+  .view{
+    @include clearfix();
+  }
+
+  .exo-asset-new{
+    margin-bottom:10px;
+  }
+
+  .view-content{
+    text-align: center;
+  }
+
+  .views-row{
+    position:relative;
+    display:inline-block;
+    overflow:hidden;
+    padding:0;
+    background:#3f3f3f;
+    color:#fff;
+    font-shadow: 0 -1px 0 #000;
+    width:170px;
+    height:100px;
+    margin:5px;
+    text-align: center;
+    overflow:hidden;
+
+    // &.views-row-odd{
+    //   margin-right:10px;
+    // }
+
+    .views-field-name{
+      position:absolute;
+      bottom:0;
+      left:0;
+      right:0;
+      background:rgba(0,0,0,.5);
+      font-size:11px;
+      line-height:11px;
+      padding:5px;
+    }
+
+    .views-field-field-asset-file{
+      padding-top:30px;
+
+      a{
+        display:none;
+      }
+    }
+
+    .asset-edit,
+    .asset-delete{
+      position:absolute;
+      @include transition(opacity 0.2s);
+      @include opacity(0);
+      top:10px;
+      z-index:11;
+    }
+
+    .asset-edit{
+      left:10px;
+
+      [class^="icon-"]:before,
+      [class*=" icon-"]:before{
+        margin-left:0 !important;
+        margin-right:0 !important;
+      }
+    }
+
+    .asset-delete{
+      right:10px;
+    }
+
+    &:hover{
+      .asset-edit,
+      .asset-delete{
+        @include opacity(100);
+      }
+    }
+  }
+
+  .asset-select{
+    position:absolute;
+    left:0;
+    right:0;
+    top:0;
+    bottom:0;
+    z-index:10;
+    text-indent:-1000px;
+    overflow:hidden;
+
+    &:focus{
+      outline: none;
+    }
+  }
+
+}

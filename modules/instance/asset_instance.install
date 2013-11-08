@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function asset_instance_schema() {
+  $schema = array();
+
+  $schema['asset_instance'] = array(
+    'description' => 'Stores information about defined asset instance.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique asset instance identifier.',
+      ),
+      'type' => array(
+        'description' => 'The {asset_type}.type of this asset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this asset instance.',
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'type' => array('type'),
+    ),
+  );
+
+  $schema['asset_instance_usage'] = array(
+    'description' => 'Track where an asset instance is used.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique asset instance identifier.',
+      ),
+      'asset_id' => array(
+        'description' => 'Asset ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'instance_id' => array(
+        'description' => 'Asset instance ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+      ),
+      'entity_id' => array(
+        'description' => 'The entity ID the asset is used within.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'entity_type' => array(
+        'description' => 'The {entity}.type of this entity.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'asset_id' => array('asset_id'),
+      'instance_id' => array('instance_id'),
+      'entity_id' => array('entity_id'),
+      'entity_type' => array('entity_type'),
+    ),
+  );
+
+  return $schema;
+}
