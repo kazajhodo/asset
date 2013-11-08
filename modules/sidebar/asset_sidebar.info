@@ -1,0 +1,10 @@
+name        = Asset | Sidebar
+description = Allows asset placement and management in side sidebar.
+package     = asset
+version     = VERSION
+core        = 7.x
+
+dependencies[] = text
+dependencies[] = asset
+dependencies[] = entityreference
+dependencies[] = inline_entity_form

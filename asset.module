@@ -12,13 +12,29 @@
  * @author JaceRider
  */
 function asset_menu(){
-  $items['asset/browser/%/%'] = array(
-    'page callback' => 'asset_browser',
-    'page arguments' => array(2,3),
-    'access callback' => 'asset_access',
-    'access arguments' => array('view', 2),
-    'file' => 'asset.page.inc',
-    'type' => MENU_CALLBACK
+  foreach (asset_get_types() as $type) {
+    $asset = asset_create(array('type' => $type->type));
+    $items['asset/browser/'.$type->type.'/%'] = array(
+      'page callback' => 'asset_browser',
+      'page arguments' => array($asset,3),
+      'access callback' => 'asset_access',
+      'access arguments' => array('view', $type),
+      'file' => 'asset.page.inc',
+      'type' => MENU_CALLBACK
+    );
+  }
+  $items['admin/config/content/asset'] = array(
+    'title' => 'Assets',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('asset_settings'),
+    'access arguments' => array('administer assets'),
+    'file' => 'asset.admin.inc',
+    'description' => t('Configure assets.')
+  );
+  $items['admin/config/content/asset/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10
   );
   return $items;
 }

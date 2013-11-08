@@ -6,6 +6,7 @@
 function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
   $ief_id = $form['#ief_id'];
   $instance = $form_state['inline_entity_form'][$ief_id]['instance'];
+  $settings = $form_state['inline_entity_form'][$ief_id]['form settings'];
   module_load_include('inc', 'asset', 'asset.page');
   drupal_add_js(drupal_get_path('module','asset') . '/js/asset.inline_entity_form.js');
 
@@ -14,16 +15,15 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
   $bundle = $instance['bundle'];
 
   $field = field_info_field($field_name);
-  $instance = field_info_instance($entity_type, $field_name, $bundle);
-  $settings = inline_entity_form_settings($field, $instance);
   $controller = inline_entity_form_get_controller($instance);
 
   $form['#prefix'] = '<div class="asset-inline-entity-browser">';
   $form['#suffix'] = '</div>';
 
   // @TODO allow for more than one bundle
-  $asset_type = $settings['bundles'][0];
-  $form['browser'] = asset_browser($asset_type);
+  $asset_type = $settings['bundle'];
+  $asset = asset_create(array('type' => $asset_type));
+  $form['browser'] = asset_browser($asset);
 
   $form['entity_id'] = array(
     '#type' => 'hidden',
@@ -272,11 +272,11 @@ class AssetInlineEntityFormController {
   public function entityForm($entity_form, &$form_state) {
     $info = entity_get_info($this->entityType);
     $entity = $entity_form['#entity'];
+    $asset_type = asset_type_load($entity->type);
 
     if (!empty($info['fieldable'])) {
       $langcode = entity_language($this->entityType, $entity);
       if(!empty($entity->id)){
-        $asset_type = asset_type_load($entity->type);
         $entity_form['notice'] = array(
           '#markup' => '<div class="messages warning">Editing this '.strtolower($asset_type->label).' asset will impact all other areas where this asset is used.</div>',
           '#weight' => -6,
@@ -284,7 +284,7 @@ class AssetInlineEntityFormController {
       }
       $entity_form['name'] = array(
         '#type' => 'textfield',
-        '#title' => t('Name'),
+        '#title' => t($asset_type->label . ' Name'),
         '#default_value' => isset($entity->name) ? $entity->name : '',
         '#maxlength' => 255,
         '#required' => TRUE,

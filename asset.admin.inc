@@ -166,10 +166,12 @@ function asset_delete_form_wrapper($asset) {
  *     with only a asset type defined.
  */
 function asset_edit_form($form, &$form_state, $asset) {
+  $asset_type = asset_type_load($asset->type);
+
   // Add the default field elements.
   $form['name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Asset Name'),
+    '#title' => t($asset_type->label . ' Name'),
     '#default_value' => isset($asset->name) ? $asset->name : '',
     '#maxlength' => 255,
     '#required' => TRUE,
@@ -344,6 +346,16 @@ function theme_asset_add_list($variables) {
   }
 
   return $output;
+}
+
+/**
+ * Menu callback for settings form.
+ */
+function asset_settings($form, $form_state) {
+
+  drupal_set_message('Coming soon.');
+
+  return system_settings_form($form);
 }
 
 
