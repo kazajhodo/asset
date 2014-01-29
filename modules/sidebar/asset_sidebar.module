@@ -6,7 +6,7 @@
  * @author JaceRider
  */
 function asset_sidebar_menu(){
-  $items['admin/config/content/asset/convert'] = array(
+  $items['admin/config/content/asset/sidebar'] = array(
     'title' => 'Sidebar',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('asset_sidebar_settings'),
@@ -23,8 +23,7 @@ function asset_sidebar_menu(){
     'page callback' => 'asset_sidebar_form_wrapper',
     'page arguments' => array($asset,3,4),
     'theme callback' => 'ajax_base_page_theme',
-    'access callback' => 'asset_access',
-    'access arguments' => array('edit', $asset),
+    'access arguments' => array('add asset sidebar'),
     'file' => 'asset_sidebar.page.inc',
     'file path' => drupal_get_path('module', 'asset_sidebar'),
     'type' => MENU_CALLBACK
@@ -34,8 +33,7 @@ function asset_sidebar_menu(){
     'page callback' => 'asset_sidebar_form_wrapper',
     'page arguments' => array(3),
     'theme callback' => 'ajax_base_page_theme',
-    'access callback' => 'asset_access',
-    'access arguments' => array('edit', $asset),
+    'access arguments' => array('add asset sidebar'),
     'file' => 'asset_sidebar.page.inc',
     'file path' => drupal_get_path('module', 'asset_sidebar'),
     'type' => MENU_CALLBACK
@@ -62,6 +60,10 @@ function asset_sidebar_permission() {
       'title' => t('Administer Assets Sidebar'),
       'description' => t('Perform administration tasks for sidebar assets.'),
     ),
+    'add asset sidebar' => array(
+      'title' => t('Add Assets Sidebar'),
+      'description' => t('Add sidebars to nodes and views pages.'),
+    ),
   );
 }
 
@@ -77,30 +79,43 @@ function asset_sidebar_page_alter(&$page){
     if($object = asset_sidebar_page_object()){
       $url = 'asset/sidebar/add/' . $object['type'] . '/' . $object['id'];
       $region = variable_get('asset_sidebar_region');
-      $page[$region] = empty($page[$region]) ? array() : $page[$region];
-      $region = &$page[$region];
+      if($region){
+        $page[$region] = empty($page[$region]) ? array() : $page[$region];
+        $region = &$page[$region];
 
-      if($sidebar = asset_sidebar_block($object)){
+        if($sidebar = asset_sidebar_block($object)){
 
-        $url = 'asset/sidebar/edit/' . $sidebar->id;
+          $url = 'asset/sidebar/edit/' . $sidebar->id;
 
-        $wrapper = entity_metadata_wrapper('asset', $sidebar);
-        foreach ($wrapper->field_asset_sidebar_blocks->getIterator() as $delta => $block_wrapper) {
-          $title = $block_wrapper->field_asset_sidebar_title->value();
-          $render = $block_wrapper->view();
-          $content = drupal_render($render);
-          asset_sidebar_block_create($region, $title, $content);
+          $fullDimentions = variable_get('asset_sidebar_padding');
+          if($fullDimentions){
+            $css = '<style>.asset-sidebar-fullwidth{';
+            if(!empty($fullDimentions['top'])) $css .= 'margin-top:'.$fullDimentions['top'].';';
+            if(!empty($fullDimentions['right'])) $css .= 'margin-right:'.$fullDimentions['right'].';';
+            if(!empty($fullDimentions['bottom'])) $css .= 'margin-bottom:'.$fullDimentions['bottom'].';';
+            if(!empty($fullDimentions['left'])) $css .= 'margin-left:'.$fullDimentions['left'].';';
+            $css .= '}</style>';
+            $region['sidebar_css'] = array(
+              '#markup' => $css
+            );
+          }
+
+          $wrapper = entity_metadata_wrapper('asset', $sidebar);
+          foreach ($wrapper->field_asset_sidebar_blocks->getIterator() as $delta => $block_wrapper) {
+            if(!$block_wrapper->getBundle()) continue;
+            $title = !empty($block_wrapper->field_asset_sidebar_title) ? $block_wrapper->field_asset_sidebar_title->value() : '';
+            $render = $block_wrapper->view();
+            $content = drupal_render($render);
+            asset_sidebar_block_create($region, $title, $content);
+          }
         }
 
-        // $title = $sidebar->name;
-        // $render = asset_render($sidebar);
-        // $content = drupal_render($render);
-        // asset_sidebar_block_create($region, $title, $content);
+        if(user_access('add asset sidebar')){
+          $title = '';
+          $content = l('<i class="fa fa-edit"></i> Manage Sidebar', $url, array('html'=>TRUE, 'query' => drupal_get_destination(), 'attributes'=>array('class'=>array('btn','btn-primary', 'btn-block'))));
+          asset_sidebar_block_create($region, $title, $content);
+        }
       }
-
-      $title = '';
-      $content = l('<i class="fa fa-edit"></i> Manage Sidebar', $url, array('html'=>TRUE, 'query' => drupal_get_destination(), 'attributes'=>array('class'=>array('btn','btn-primary', 'btn-block'))));
-      asset_sidebar_block_create($region, $title, $content);
     }
   }
 }
@@ -109,7 +124,7 @@ function asset_sidebar_page_alter(&$page){
  * Get sidebar for given page
  */
 function asset_sidebar_block($object){
-  $asset = NULL;
+  $asset = FALSE;
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'asset')
     ->entityCondition('bundle', 'sidebar')
@@ -123,6 +138,21 @@ function asset_sidebar_block($object){
     $asset = asset_load($asset_id);
   }
   return $asset;
+}
+
+/**
+ * Preprocess asset entities
+ */
+function asset_sidebar_preprocess_entity(&$vars) {
+  if(!empty($vars['asset'])){
+    $reference_info = field_info_field('field_asset_sidebar_blocks');
+    if(in_array($vars['asset']->type, $reference_info['settings']['handler_settings']['target_bundles'])){
+      $wrapper = entity_metadata_wrapper('asset', $vars['asset']);
+      if(!empty($wrapper->field_asset_sidebar_full) && $wrapper->field_asset_sidebar_full->value()){
+        $vars['classes_array'][] = 'asset-sidebar-fullwidth';
+      }
+    }
+  }
 }
 
 /**
@@ -164,6 +194,7 @@ function asset_sidebar_block_create(&$region, $title, $content){
  * Implements hook_form_alter().
  */
 function asset_sidebar_form_asset_sidebar_edit_form_alter(&$form, &$form_state){
+
   $asset_type = asset_type_load($form_state['asset']->type);
 
   $widget = &$form['field_asset_sidebar_blocks'][$form['field_asset_sidebar_blocks']['#language']];
@@ -171,8 +202,8 @@ function asset_sidebar_form_asset_sidebar_edit_form_alter(&$form, &$form_state){
   $widget['actions']['ief_add']['#value'] = 'Add New';
   if(!user_access('administer asset sidebar')){
     $widget['actions']['ief_add']['#states'] = array(
-      'visible' => array(
-        ':input[name="field_asset_sidebar_blocks[und][actions][bundle]"]' => array('value' => 'sidebar_custom'),
+      'invisible' => array(
+        ':input[name="field_asset_sidebar_blocks[und][actions][bundle]"]' => array('value' => 'sidebar_system'),
       ),
     );
   }
@@ -185,17 +216,18 @@ function asset_sidebar_form_asset_sidebar_edit_form_alter(&$form, &$form_state){
 
   if(isset($widget['actions']['bundle'])){
     $widget['actions']['bundle']['#title'] = '<i class="fa fa-'.$asset_type->data['icon'].'"></i> ' . t('ADD BLOCK:');
-    $widget['actions']['bundle']['#field_prefix'] = '<div class="description"><span class="fa-stack fa-1x"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse">1</i></span> ' . t('Choose block type') . ':</div>';
-    $widget['actions']['bundle']['#description'] = '&nbsp;&nbsp;<span class="fa-stack fa-1x"><i class="fa fa-square fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse">2</i></span> ' . t('Choose an action:');
+    $widget['actions']['bundle']['#field_prefix'] = '&nbsp;&nbsp;<div class="description">' . t('Choose block type') . ':</div>';
+    $widget['actions']['bundle']['#description'] = '&nbsp;&nbsp;' . t('Choose an action:');
     foreach($widget['actions']['bundle']['#options'] as $bundle => &$name){
       $name = str_replace('Sidebar Block | ', '', $name);
     }
+    ksort($widget['actions']['bundle']['#options']);
   }
 
   if(isset($widget['form']['name'])){
     $widget['form']['name']['#title'] = t('Administrative Title');
     $widget['form']['name']['#description'] = t('Use this title to describe your block. It is used in the backend admin to help you find and reuse it.');
-    // $widget['form']['name']['#description'] = t('The title will be displayed above your block in the sidebar.');
+    $widget['form']['actions']['ief_add_save']['#value'] = t('Create');
   }
 
   if(isset($widget['entities'])){

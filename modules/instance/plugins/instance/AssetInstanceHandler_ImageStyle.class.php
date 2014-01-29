@@ -13,7 +13,7 @@ class AssetInstanceHandler_ImageStyle extends AssetInstanceHandler_Abstract {
     return $defaults;
   }
 
-  public function settings_form(&$form, &$form_state, $defaults) {
+  public function settings_form(&$form, &$form_state, $defaults, $parent_name) {
     $styles = image_styles();
     $form['image_styles'] = array(
       '#type' => 'item',
@@ -34,14 +34,14 @@ class AssetInstanceHandler_ImageStyle extends AssetInstanceHandler_Abstract {
       );
       $form['image_styles'][$id]['label']['#states'] = array(
         'visible' => array(
-          ':input[name="data[instances][imageStyle_settings][image_styles]['.$id.'][enabled]"]' => array('checked' => TRUE),
+          ':input[name="'.$parent_name.'[image_styles]['.$id.'][enabled]"]' => array('checked' => TRUE),
         ),
       );
     }
   }
 
   public function instance_form(&$form, &$form_state, $settings, $defaults) {
-    $options = array();
+    $options = array('' => '- None -');
     foreach($settings['image_styles'] as $id => $data){
       if(empty($data['enabled'])) continue;
       $options[$id] = !empty($data['label']) ? t($data['label']) : $id;
@@ -50,8 +50,7 @@ class AssetInstanceHandler_ImageStyle extends AssetInstanceHandler_Abstract {
       '#type' => 'select',
       '#title' => t('Image Style'),
       '#options' => $options,
-      '#default_value' => !empty($defaults['image_style']) ? $defaults['image_style'] : '',
-      '#required' => TRUE,
+      '#default_value' => isset($defaults['image_style']) ? $defaults['image_style'] : '',
     );
   }
 

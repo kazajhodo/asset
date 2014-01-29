@@ -43,9 +43,11 @@ abstract class AssetInstanceHandler_Abstract implements AssetInstanceHandler {
     $this->plugin = $plugin;
   }
 
-  public function defaults($settings) {}
+  public function defaults($settings) {
+    return array();
+  }
 
-  public function settings_form(&$form, &$form_state, $defaults) {}
+  public function settings_form(&$form, &$form_state, $defaults, $parent_name) {}
 
   public function instance_form(&$form, &$form_state, $settings, $defaults) {}
 

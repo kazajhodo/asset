@@ -55,7 +55,7 @@ class AssetUIController extends EntityDefaultUIController {
       $items[$this->path . '/add/' . $type->type] = array(
         'title' => 'Add ' . $type->label,
         'page callback' => 'asset_form_wrapper',
-        'page arguments' => array(asset_create(array('type' => $type->type))),
+        'page arguments' => array($type->type),
         'access callback' => 'asset_access',
         'access arguments' => array('edit', $type),
         'file' => 'asset.admin.inc',
@@ -137,6 +137,9 @@ class AssetUIController extends EntityDefaultUIController {
  * @see asset_edit_form()
  */
 function asset_form_wrapper($asset) {
+  if(!is_a($asset, 'Asset')){
+    $asset = asset_create(array('type' => $asset));
+  }
   // Add the breadcrumb for the form's location.
   asset_set_breadcrumb();
   return drupal_get_form('asset_edit_form', $asset);

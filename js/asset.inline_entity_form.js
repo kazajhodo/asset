@@ -16,7 +16,7 @@ Drupal.behaviors.asset_inline_entity_form = {
     var id = $this.attr('data-id');
     var $wrapper = $this.closest('.fieldset-wrapper');
     var parents = $('.parents',$wrapper).val();
-    $('.asset-inline-entity',$wrapper).val(id);
+    $('.asset-inline-entity',$wrapper).val('Asset (' + id + ')');
     $('input.ief-entity-submit',$wrapper).trigger('mousedown');
   }
 }

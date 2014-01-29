@@ -12,8 +12,8 @@ class AssetInstanceHandler_Position extends AssetInstanceHandler_Abstract {
     $form['position'] = array(
       '#type' => 'select',
       '#title' => t('Position'),
-      '#required' => TRUE,
       '#options' => array(
+        '' => t('- None -'),
         'center' => t('Center'),
         'left' => t('Left'),
         'right' => t('Right'),
@@ -38,12 +38,6 @@ class AssetInstanceHandler_Position extends AssetInstanceHandler_Abstract {
     if(!empty($settings['position'])){
       $vars['classes_array'][] = 'asset-position-' . $settings['position'];
     }
-    // if(!empty($settings['position'])){
-    //   dsm($element);
-    //   $class = 'asset-position-' . $settings['position'];
-    //   $element['#prefix'] = '<div class="' . $class . ' clearfix">';
-    //   $element['#suffix'] = '</div>';
-    // }
   }
 
 }

@@ -7,7 +7,7 @@
 
 
 /**
- * Implements hook_views_data()
+ * Implements hook_views_data_alter()
  */
 function asset_views_data_alter(&$data) {
 
@@ -49,6 +49,15 @@ function asset_views_data_alter(&$data) {
       'title' => t('Operations links'),
       'help' => t('Display all operations available for this asset.'),
       'handler' => 'asset_handler_asset_operations_field',
+    ),
+  );
+
+  // Define a handler for adding an asset creation link
+  $data['asset']['create_asset'] = array(
+    'title' => t('Create Asset Link'),
+    'help' => t('Shows a link for asset creation.'),
+    'area' => array(
+      'handler' => 'asset_handler_create_link_area',
     ),
   );
 }

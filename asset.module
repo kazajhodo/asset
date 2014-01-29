@@ -104,7 +104,7 @@ function asset_entity_info() {
     'bundle of' => 'asset',
     'exportable' => TRUE,
     'entity keys' => array(
-      'id' => 'id',
+      'id' => 'type',
       'name' => 'type',
       'label' => 'label',
     ),
@@ -206,7 +206,11 @@ function asset_token_find($text, $assets_load = FALSE){
         preg_match($pattern, $match, $m);
         $asset_id = $key = $m[1];
         $instance_id = !empty($m[2]) ? $m[2] : 0;
-        $asset = $assets_load ? asset_load($asset_id) : NULL;
+        $asset = NULL;
+        if($assets_load){
+          $asset = asset_load($asset_id);
+          if(empty($asset->id)) continue;
+        }
         $assets[$asset_id . '-' . $instance_id] = array(
           'aid' => $asset_id,
           'iid' => $instance_id,
@@ -367,6 +371,57 @@ function asset_form_field_ui_display_overview_form_alter_submit($form, &$form_st
 function asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
   module_load_include('inc', 'asset', 'asset.inline_entity_form');
   _asset_inline_entity_form_reference_form_alter($form, $form_state);
+}
+
+function asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
+  module_load_include('inc', 'asset', 'asset.inline_entity_form');
+  _asset_inline_entity_form_entity_form_alter($form, $form_state);
+}
+
+function asset_inline_entity_form_entity_form_submit($form, &$form_state){
+  $parents = array_slice($form_state['triggering_element']['#array_parents'], 0, -2);
+  $temp_form = drupal_array_get_nested_value($form, $parents);
+  // There are issues with IEF when nesting IEF forms within eachother.
+  foreach (element_children($temp_form) as $key) {
+    if(isset($temp_form[$key]['#language']) && isset($temp_form[$key][$temp_form[$key]['#language']]['#ief_id'])){
+      unset($form_state['inline_entity_form'][$temp_form[$key][$temp_form[$key]['#language']]['#ief_id']]);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function asset_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form_state['inline_entity_form'])) {
+    foreach (element_children($form) as $key) {
+      if(isset($form[$key]['#language']) && isset($form[$key][$form[$key]['#language']]['#ief_id'])){
+        $field = &$form[$key][$form[$key]['#language']];
+        $found = FALSE;
+        foreach (element_children($field['entities']) as $key) {
+          $entity = $field['entities'][$key];
+          if(isset($entity['form'])) $found = TRUE;
+        }
+        if($found){
+          $field['entities']['#theme'] = NULL;
+          $field['actions']['#access'] = FALSE;
+          foreach (element_children($field['entities']) as $key) {
+            $entity = &$field['entities'][$key];
+            if(isset($entity['form'])){
+              $entity['#access'] = TRUE;
+            }
+            else{
+              $entity['#access'] = FALSE;
+            }
+          }
+        }
+        // When an IEF field is in form mode, hide table view.
+        if(!empty($field['form'])){
+          $field['entities']['#access'] = FALSE;
+        }
+      }
+    }
+  }
 }
 
 

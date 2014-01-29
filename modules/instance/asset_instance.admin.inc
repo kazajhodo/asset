@@ -122,6 +122,7 @@ function asset_instance_form_fields(&$form, $instance, $instance_type){
     }
     $handler->instance_form($form, $form_state, $settings, $instance->data);
   }
+  return count($form) > 1 ? TRUE : FALSE;
 }
 
 /**
@@ -171,17 +172,7 @@ function asset_instance_form($form, &$form_state, $asset_instance, $op = 'edit')
 
   if(isset($asset_instance->type) || isset($form_state['values']['type'])){
     $instance_type = isset($form_state['values']['type']) ? $form_state['values']['type'] : $asset_instance->type;
-    asset_instance_form_fields($form['data'], $asset_instance, $instance_type);
-    // $active = asset_instance_get_active($instance_type);
-    // $plugins = asset_instance_get_plugin('instance');
-    // foreach($active as $instance_type => $settings){
-    //   $handler = asset_instance_get_handler('instance', $instance_type);
-    //   $plugin = $plugins[$instance_type];
-    //   if(!empty($plugin['css_admin'])){
-    //     $form['data']['#attached']['css'][] = drupal_get_path('module', $instance['module']) . '/' . $instance['css_admin'];
-    //   }
-    //   $handler->instance_form($form['data'], $form_state, $settings, $asset_instance->data);
-    // }
+    $has_instance = asset_instance_form_fields($form['data'], $asset_instance, $instance_type);
   }
 
   $form['#submit'][] = 'asset_instance_form_submit';
@@ -191,6 +182,11 @@ function asset_instance_form($form, &$form_state, $asset_instance, $op = 'edit')
     '#value' => t('Save'),
     '#weight' => 40,
   );
+
+  if(empty($has_instance)){
+    $form = array();
+    drupal_set_message(t('There are no settings for this asset.'),'warning');
+  }
 
   return $form;
 }

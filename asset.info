@@ -13,6 +13,7 @@ files[] = views/asset.views.inc
 files[] = views/asset_handler_link_field.inc
 files[] = views/asset_handler_delete_link_field.inc
 files[] = views/asset_handler_edit_link_field.inc
+files[] = views/asset_handler_create_link_area.inc
 files[] = views/asset_handler_asset_operations_field.inc
 files[] = views/asset_handler_asset_select_field.inc
 

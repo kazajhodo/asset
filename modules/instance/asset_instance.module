@@ -20,18 +20,16 @@ function asset_get_instances($id = NULL) {
 
 /**
  * Menu argument loader; Load a asset type by string.
- *
- * @param $type
- *   The machine-readable name of a asset type to load.
- * @return
- *   A asset type array or FALSE if $type does not exist.
  */
 function asset_instance_load($id) {
   $instance = asset_get_instances($id);
   return empty($instance[$id]) ? NULL : $instance[$id];
 }
 
-
+/**
+ * Load an instance based on asset type. If an instance is not found, a default
+ * instance is returned.
+ */
 function asset_instance_load_with_type($id, $asset_type) {
   $instance = asset_instance_load($id);
   if(empty($instance) || (!empty($instance) && $instance->type !== $asset_type)){
@@ -134,6 +132,7 @@ class AssetInstanceController extends EntityAPIControllerExportable {
       // Merge asset default overrides
       $values['data'] = array_merge($values['data'], variable_get('asset_' . $values['type'] . '_defaults', array()));
     }
+    drupal_alter('asset_instance_create', $values);
     $asset_instance = parent::create($values);
     return $asset_instance;
   }
@@ -153,10 +152,23 @@ function asset_instance_token_replace($text, $view_mode = 'full'){
   return $text;
 }
 
+/**
+ * Remove all tokens.
+ */
+function asset_instance_token_remove($text, $view_mode = 'full'){
+  $assets = asset_token_find($text, TRUE);
+  foreach($assets as $aid => $vars){
+    $text = str_replace($vars['token'], '', $text);
+  }
+  return $text;
+}
+
 // /**
 //  * Sets up content to show an individual asset
 //  */
 function asset_instance_render($asset, $instance = NULL, $view_mode = 'full') {
+  if(empty($asset->id)) return;
+
   // Add instance into asset object
   $asset->instance = $instance;
 
@@ -217,7 +229,7 @@ function asset_instance_preprocess_entity(&$vars) {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function asset_instance_form_asset_type_form_alter(&$form, &$form_state, $form_id){
+function asset_instance_form_asset_type_form_alter(&$form, &$form_state){
   $asset_type = $form_state['asset_type'];
 
   $plugins = asset_instance_get_plugin('instance');
@@ -231,39 +243,41 @@ function asset_instance_form_asset_type_form_alter(&$form, &$form_state, $form_i
       '#description' => t('An asset can have instance settings. These settings allow changes per asset on an individual implementation.') . '<hr /><br />',
     );
     foreach($plugins as $plugin){
-      $handler = asset_instance_get_handler('instance', $plugin['name']);
-
-      $form['data']['instances'][$plugin['name']] = array(
-        '#type' => 'checkbox',
-        '#title' => $plugin['title'],
-        '#default_value' => empty($asset_type->data['instances'][$plugin['name']]) ? 0 : 1,
-        '#description' => !empty($plugin['description']) ? $plugin['description'] : NULL,
-      );
-
       $settings_defaults = !empty($asset_type->data['instances'][$plugin['name']]) ? $asset_type->data['instances'][$plugin['name']] : array();
-      $settings_form = array();
-      $handler->settings_form($settings_form, $form_state, $settings_defaults);
-      if(!empty($settings_form)){
-
-        $form['data']['instances'][$plugin['name'].'_settings'] = array(
-          '#tree' => TRUE,
-          '#type' => 'fieldset',
-          '#title' => $plugin['title'] . ' ' . t('Settings'),
-        );
-
-        $form['data']['instances'][$plugin['name'].'_settings']['#states'] = array(
-          'visible' => array(
-            ':input[name="data[instances]['.$plugin['name'].']"]' => array('checked' => TRUE),
-          ),
-        );
-
-        $form['data']['instances'][$plugin['name'].'_settings'] += $settings_form;
-
-      }
-
+      asset_instance_settings_form($form['data']['instances'], $form_state, $plugin, $settings_defaults);
       $form['data']['instances']['#access'] = TRUE;
     }
     $form['#validate'][] = 'asset_instance_type_form_alter_validate';
+  }
+}
+
+function asset_instance_settings_form(&$form, &$form_state, $plugin, $settings_defaults = array(), $parent_name = 'data[instances]'){
+  $handler = asset_instance_get_handler('instance', $plugin['name']);
+
+  $form[$plugin['name']] = array(
+    '#type' => 'checkbox',
+    '#title' => $plugin['title'],
+    '#default_value' => empty($settings_defaults) ? 0 : 1,
+    '#description' => !empty($plugin['description']) ? $plugin['description'] : NULL,
+  );
+
+  $settings_form = array();
+  $handler->settings_form($settings_form, $form_state, $settings_defaults, $parent_name.'['.$plugin['name'].'_settings]');
+  if(!empty($settings_form)){
+
+    $form[$plugin['name'].'_settings'] = array(
+      '#tree' => TRUE,
+      '#type' => 'fieldset',
+      '#title' => $plugin['title'] . ' ' . t('Settings'),
+    );
+
+    $form[$plugin['name'].'_settings']['#states'] = array(
+      'visible' => array(
+        ':input[name="'.$parent_name.'['.$plugin['name'].']"]' => array('checked' => TRUE),
+      ),
+    );
+
+    $form[$plugin['name'].'_settings'] += $settings_form;
   }
 }
 
@@ -272,20 +286,28 @@ function asset_instance_form_asset_type_form_alter(&$form, &$form_state, $form_i
  */
 function asset_instance_type_form_alter_validate(&$form, &$form_state) {
   if(@is_array($form_state['values']['data']['instances'])){
-    foreach($form_state['values']['data']['instances'] as $key => &$value){
-      if($value === 1){
-        // If instance is active, merge settings with primary key.
-        if(isset($form_state['values']['data']['instances'][$key . '_settings'])){
-          $value = $form_state['values']['data']['instances'][$key . '_settings'];
-          unset($form_state['values']['data']['instances'][$key . '_settings']);
-        }
-      }else{
-        // If instance settings aren't active, remove instance.
-        unset($form_state['values']['data']['instances'][$key]);
-        unset($form_state['values']['data']['instances'][$key . '_settings']);
+    $form_state['values']['data']['instances'] = asset_instance_settings_values_cleanup($form_state['values']['data']['instances']);
+  }
+}
+
+/**
+ * Cleanup the values to be saved for instance settings.
+ */
+function asset_instance_settings_values_cleanup($values){
+  foreach($values as $key => &$value){
+    if($value === 1){
+      // If instance is active, merge settings with primary key.
+      if(isset($values[$key . '_settings'])){
+        $value = $values[$key . '_settings'];
+        unset($values[$key . '_settings']);
       }
+    }else{
+      // If instance settings aren't active, remove instance.
+      unset($values[$key]);
+      unset($values[$key . '_settings']);
     }
   }
+  return $values;
 }
 
 
