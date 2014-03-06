@@ -39,7 +39,7 @@ abstract class AssetInstanceHandler_Abstract implements AssetInstanceHandler {
   public function __construct($type, $args = NULL) {
     $this->type = $type;
     ctools_include('plugins');
-    $plugin = ctools_get_plugins('mee', 'instance', $type);
+    $plugin = ctools_get_plugins('asset_instance', 'instance', $type);
     $this->plugin = $plugin;
   }
 

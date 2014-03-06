@@ -18,7 +18,7 @@ class AssetInstanceHandler_Position extends AssetInstanceHandler_Abstract {
         'left' => t('Left'),
         'right' => t('Right'),
       ),
-      '#default_value' => !empty($defaults['position']) ? $defaults['position'] : 'center',
+      '#default_value' => isset($defaults['position']) ? $defaults['position'] : 'center',
       // '#ajax' => array(
       //   'callback' => 'mee_asset_instance_form_preview_ajax',
       //   'wrapper' => 'asset-instance-form',

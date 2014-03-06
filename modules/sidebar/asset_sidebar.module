@@ -112,7 +112,7 @@ function asset_sidebar_page_alter(&$page){
 
         if(user_access('add asset sidebar')){
           $title = '';
-          $content = l('<i class="fa fa-edit"></i> Manage Sidebar', $url, array('html'=>TRUE, 'query' => drupal_get_destination(), 'attributes'=>array('class'=>array('btn','btn-primary', 'btn-block'))));
+          $content = l('<i class="fa fa-edit"></i> Manage Sidebar', $url, array('html'=>TRUE, 'query' => drupal_get_destination(), 'attributes'=>array('style'=>'margin:0;', 'class'=>array('button', 'expand', 'btn','btn-primary', 'btn-block'))));
           asset_sidebar_block_create($region, $title, $content);
         }
       }
@@ -203,7 +203,7 @@ function asset_sidebar_form_asset_sidebar_edit_form_alter(&$form, &$form_state){
   if(!user_access('administer asset sidebar')){
     $widget['actions']['ief_add']['#states'] = array(
       'invisible' => array(
-        ':input[name="field_asset_sidebar_blocks[und][actions][bundle]"]' => array('value' => 'sidebar_system'),
+        ':input[name="field_asset_sidebar_blocks['.$form['field_asset_sidebar_blocks']['#language'].'][actions][bundle]"]' => array('value' => 'sidebar_system'),
       ),
     );
   }
@@ -250,6 +250,7 @@ function asset_sidebar_form_asset_sidebar_edit_form_alter(&$form, &$form_state){
 
   if(isset($form['actions']['delete'])){
     $form['actions']['delete']['#value'] = 'Delete Sidebar';
+    $form['actions']['delete']['#limit_validation_errors'] = array();
     $form['actions']['delete']['#suffix'] = '';
   }
 

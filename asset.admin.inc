@@ -267,7 +267,11 @@ function asset_edit_form_submit(&$form, &$form_state) {
  * @todo Remove hard-coded path
  */
 function asset_form_submit_delete(&$form, &$form_state) {
-  $form_state['redirect'] = 'admin/content/assets/asset/' . $form_state['asset']->id . '/delete';
+  $destination = drupal_get_destination();
+  unset($_GET['destination']);
+  $form_state['redirect'] = array(
+    'admin/content/assets/asset/' . $form_state['asset']->id . '/delete', array('query' => $destination),
+  );
 }
 
 

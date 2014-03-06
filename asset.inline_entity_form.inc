@@ -213,6 +213,9 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController {
       field_attach_form($this->entityType, $entity, $entity_form, $form_state, $langcode);
     }
 
+    // Process multilingual and shared form elements.
+    if(method_exists($this,'entityFormSharedElements')) $this->entityFormSharedElements($entity_form);
+
     return $entity_form;
   }
 }
