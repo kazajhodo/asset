@@ -60,12 +60,30 @@ class AssetInstanceHandler_Link extends AssetInstanceHandler_Abstract {
         $element['#suffix'] = '<a style="margin-top:-14px; margin-bottom:20px;" class="btn btn-info btn-sm btn-block linkit-field-button linkit-field-' . $field_id . '" href="#"><i class="fa fa-search"></i> ' . $button_text . ' Local Content</a>';
       }
     }
+
+    $form['new'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Open link in a new window'),
+      '#id' => 'exo-link-new',
+      '#weight' => 3,
+      '#default_value' => !empty($defaults['new']) ? $defaults['new'] : '',
+      '#states' => array(
+        'visible' => array(
+          ':input[name="data[link]"]' => array('filled' => TRUE),
+        ),
+      ),
+    );
   }
 
   public function instance_render(&$vars, $settings, $config) {
     if(!empty($settings['link'])){
+      $attributes = array();
+      $attributes['href'] = url($settings['link']);
+      if(!empty($settings['new'])){
+        $attributes['target'] = '_blank';
+      }
       $vars['content']['link_prefix'] = array(
-        '#markup' => '<a href="'.url($settings['link']).'">',
+        '#markup' => '<a '.drupal_attributes($attributes).'>',
         '#weight' => -100
       );
       $vars['content']['link_suffix'] = array(
