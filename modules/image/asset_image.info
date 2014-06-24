@@ -1,6 +1,6 @@
 name        = Asset | Image Asset
 description = Provides a file asset type.
-package     = asset
+package     = Asset
 version     = VERSION
 core        = 7.x
 

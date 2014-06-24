@@ -1,6 +1,6 @@
 name = Asset
 description = Provides assets for various uses.
-package     = asset
+package     = Asset
 core = 7.x
 
 dependencies[] = entity

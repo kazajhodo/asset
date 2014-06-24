@@ -56,12 +56,13 @@ function asset_instance_entity_info() {
     'base table' => 'asset_instance',
     'fieldable' => FALSE,
     // 'bundle of' => 'asset_instance',
-    'exportable' => TRUE,
+    'exportable' => FALSE,
     'entity keys' => array(
       'id' => 'id',
     ),
     'access callback' => 'asset_instance_access',
     'module' => 'asset_instance',
+    'label callback' => 'entity_class_label',
     // Enable the entity API's admin UI.
     'admin ui' => array(
       'path' => 'admin/structure/asset_instances',
@@ -93,13 +94,18 @@ class AssetInstance extends Entity {
     parent::__construct($values, 'asset_instance');
   }
 
+  protected function defaultLabel() {
+    // Add in the translated specified label property.
+    return $this->id;
+  }
+
 }
 
 
 /**
  * The Controller for Asset entities
  */
-class AssetInstanceController extends EntityAPIControllerExportable {
+class AssetInstanceController extends EntityAPIController {
   public function __construct($entityType) {
     parent::__construct($entityType);
   }
@@ -240,7 +246,7 @@ function asset_instance_form_asset_type_form_alter(&$form, &$form_state){
       '#access' => FALSE,
       '#type' => 'fieldset',
       '#title' => t('Instance options'),
-      '#description' => t('An asset can have instance settings. These settings allow changes per asset on an individual implementation.') . '<hr /><br />',
+      '#description' => t('An asset can have instance settings. These settings allow changes per asset on an individual implementation.'),
     );
     foreach($plugins as $plugin){
       $settings_defaults = !empty($asset_type->data['instances'][$plugin['name']]) ? $asset_type->data['instances'][$plugin['name']] : array();

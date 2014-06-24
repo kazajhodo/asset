@@ -1,6 +1,6 @@
 name        = Asset | Sidebar
 description = Allows asset placement and management in side sidebar.
-package     = asset
+package     = Asset
 version     = VERSION
 core        = 7.x
 

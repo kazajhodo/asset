@@ -1,6 +1,6 @@
 name        = Asset | Instance
 description = Provides instance settings for assets.
-package     = asset
+package     = Asset
 version     = VERSION
 core        = 7.x
 
