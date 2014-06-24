@@ -1,7 +1,0 @@
-name        = Asset | Image Asset
-description = Provides a file asset type.
-package     = Asset
-version     = VERSION
-core        = 7.x
-
-dependencies[] = asset
