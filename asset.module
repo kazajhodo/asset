@@ -1,1 +1,1108 @@
 <?php
+
+require_once dirname(__FILE__) . '/includes/asset.field.inc';
+require_once dirname(__FILE__) . '/includes/asset.fieldAdmin.inc';
+require_once dirname(__FILE__) . '/includes/asset.fieldWidget.inc';
+require_once dirname(__FILE__) . '/includes/asset.cron.inc';
+
+function asset_init(){
+  // Make sure widget classes are available on each request.
+  asset_get_plugin('widget');
+  // Load global asset css
+  // if(module_exists('sonar')){
+  //   drupal_add_css(drupal_get_path('module','asset') . '/css/asset.scss');
+  // }
+
+  // $usage = asset_usage(1, $reset = TRUE);
+  // dsm($usage);
+  // dsm(asset_usage(NULL, $reset = TRUE));
+  // asset_instance_cleanup();
+  // dsm(asset_instance_orphans());
+  // dsm(asset_orphans());
+}
+
+/**
+ * Implement hook_entity_info().
+ *
+ * We define two entities here - the actual entity that will hold our domain
+ * specific information and an entity that holds information about the different
+ * types of entities. See here: http://drupal.org/node/977380 for a discussion on this
+ * choice.
+ */
+function asset_entity_info() {
+  $return['asset'] = array(
+    'label' => t('Asset'),
+    'entity class' => 'Asset',
+    'controller class' => 'AssetController',
+    'base table' => 'asset',
+    'fieldable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'bundle' => 'type',
+      'label' => 'name',
+    ),
+    // Bundles are defined by the asset types below
+    'bundles' => array(),
+    // Bundle keys tell the FieldAPI how to extract information from the bundle objects
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
+    'creation callback' => 'asset_create',
+    'access callback' => 'asset_access',
+    'module' => 'asset',
+    'inline entity form' => array(
+      'controller' => 'AssetInlineEntityFormController',
+    ),
+    'view modes' => array(
+      'default' => array(
+        'label' => t('Default'),
+        'custom settings' => TRUE
+      ),
+    ),
+    'admin ui' => array(
+      'path' => 'admin/content/assets',
+      'file' => 'includes/asset.admin.inc',
+      'controller class' => 'AssetUIController',
+      'menu wildcard' => '%asset',
+    ),
+    'translation' => array(
+      'entity_translation' => array(
+        'base path' => 'admin/content/assets/asset/%asset',
+        'path wildcard' => '%asset',
+        'default settings' => array(
+          'default_language' => LANGUAGE_NONE,
+          'hide_language_selector' => FALSE,
+        ),
+      ),
+    ),
+  );
+  // The entity that holds information about the entity types.
+  $return['asset_type'] = array(
+    'label' => t('Asset Type'),
+    'entity class' => 'AssetType',
+    'controller class' => 'AssetTypeController',
+    'base table' => 'asset_type',
+    'fieldable' => FALSE,
+    'exportable' => TRUE,
+    'bundle of' => 'asset',
+    'entity keys' => array(
+      'id' => 'type',
+      'name' => 'type',
+      'label' => 'name',
+    ),
+    'label callback' => 'entity_class_label',
+    'access callback' => 'asset_type_access',
+    'module' => 'asset',
+    'admin ui' => array(
+      'path' => 'admin/structure/assets',
+      'file' => 'includes/assetType.admin.inc',
+      'controller class' => 'AssetTypeUIController',
+    ),
+  );
+  // The entity that holds to settings of an asset instance.
+  $return['asset_instance'] = array(
+    'label' => t('Asset Instance'),
+    'entity class' => 'AssetInstance',
+    'controller class' => 'AssetInstanceController',
+    'base table' => 'asset_instance',
+    'fieldable' => FALSE,
+    'exportable' => FALSE,
+    'entity keys' => array(
+      'id' => 'id',
+    ),
+    'access callback' => 'asset_instance_access',
+    'module' => 'asset',
+  );
+
+  return $return;
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * We are adding the info about the asset types via a hook to avoid a recursion
+ * issue as loading the asset types requires the entity info as well.
+ *
+ * @todo This needs to be improved
+ */
+function asset_entity_info_alter(&$entity_info) {
+  foreach (asset_get_types() as $type => $info) {
+    $entity_info['asset']['bundles'][$type] = array(
+      'label' => $info->name,
+      'admin' => array(
+        'path' => 'admin/structure/assets/manage/%asset_type',
+        'real path' => 'admin/structure/assets/manage/' . $type,
+        'bundle argument' => 4,
+        'access arguments' => array('administer asset types'),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function asset_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/structure/assets/add' on 'admin/structure/assets'.
+  if ($root_path == 'admin/content/assets') {
+    $item = menu_get_item('admin/content/assets/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+  if ($root_path == 'asset/%'){
+    $items = array();
+    $items['assets-list'] = menu_get_item('admin/content/assets');
+    $items['assets-list']['title'] = t('Assets List');
+    $items += menu_contextual_links('asset', 'admin/content/assets/manage', array($router_item['original_map'][1]));
+    foreach($items as $item){
+      if ($item['access']) {
+        $data['tabs'][0]['output'][] = array(
+          '#theme' => 'menu_local_task',
+          '#link' => $item,
+        );
+      }
+    }
+    $data['tabs'][0]['count'] = count($data['tabs'][0]['output']);
+  }
+}
+
+/**
+ * Implement hook_theme().
+ */
+function asset_theme() {
+  $theme = array(
+    'asset_add_list' => array(
+      'variables' => array('content' => array()),
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme'
+    ),
+    'asset' => array(
+      'render element' => 'elements',
+      'template' => 'asset',
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme'
+    ),
+    'asset_usage' => array(
+      'variables' => array('usage' => array()),
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme'
+    ),
+    'asset_usage_instance' => array(
+      'variables' => array('usage' => array()),
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme'
+    ),
+    'asset_usage_link' => array(
+      'variables' => array('use' => array()),
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme'
+    ),
+  );
+  $instances = field_info_instances('asset');
+  foreach($instances as $asset_type_name => $fields){
+    foreach($fields as $field_id => $field){
+      if(substr($field_id, 6, 5) == 'asset'){
+        $theme['field__' . $field_id] = array(
+          'render element' => 'element',
+          'template' => 'field--asset',
+          'path' => drupal_get_path('module', 'asset') . '/theme',
+          'base hook' => 'asset',
+        );
+      }
+    }
+  }
+  return $theme;
+}
+
+/**
+ * Implements hook_fett_icons_alter().
+ */
+function asset_fett_icons_alter(&$icons){
+  $icons['Assets List'] = 'list';
+  $icons['Add Instance'] = 'plus';
+  foreach (asset_get_types() as $type) {
+    if(!empty($type->data['icon'])){
+      $icons[$type->name] = $type->data['icon'];
+      $icons['Add ' . $type->name] = $type->data['icon'];
+    }
+  }
+}
+
+/**
+ * Implements hook_image_default_styles().
+ */
+function asset_image_default_styles() {
+  $styles = array();
+  $styles['asset-thumb'] = array(
+    'label' => 'ASSET | Thumb',
+    'effects' => array(
+      array(
+        'name' => 'image_scale_and_crop',
+        'data' => array(
+          'width' => 170,
+          'height' => 100,
+        ),
+        'weight' => 0,
+      ),
+    ),
+  );
+  $styles['asset-full'] = array(
+    'label' => 'ASSET | Full',
+    'effects' => array(
+      array(
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 770,
+          'height' => '',
+          'upscale' => TRUE,
+        ),
+        'weight' => 0,
+      ),
+    ),
+  );
+  return $styles;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Access and Permissions
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Implements hook_permission().
+ */
+function asset_permission() {
+  // We set up permisssions to manage entity types, manage all entities and the
+  // permissions for each individual entity
+  $permissions = array(
+    'administer assets' => array(
+      'title' => t('Administer assets'),
+      'description' => t('Edit and delete all assets'),
+    ),
+    'administer asset types' => array(
+      'title' => t('Administer asset types'),
+      'description' => t('Create and delete fields for asset types, and set their permissions.'),
+    ),
+    'administer asset instances' => array(
+      'title' => t('Administer asset instances'),
+      'description' => t('Edit and delete all asset instances'),
+    ),
+  );
+
+  //Generate permissions per asset
+  foreach (asset_get_types() as $asset_type) {
+    $type_name = $asset_type->type;
+    $permissions += array(
+      "edit any $type_name asset" => array(
+        'title' => t('%type_name: Edit any asset', array('%type_name' => $asset_type->name)),
+      ),
+      "view any $type_name asset" => array(
+        'title' => t('%type_name: View any asset', array('%type_name' => $asset_type->name)),
+      ),
+      "delete any $type_name asset" => array(
+        'title' => t('%type_name: Delete any asset', array('%type_name' => $asset_type->name)),
+      ),
+    );
+  }
+  return $permissions;
+}
+
+
+/**
+ * Determines whether the given user has access to a asset.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete',
+ *   'instance' or just 'edit' (being the same as 'create' or 'update').
+ * @param $asset
+ *   Optionally a asset or a asset type to check access for. If nothing is
+ *   given, access for all assets is determined.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function asset_access($op, $asset = NULL, $account = NULL) {
+  if($op == 'instance'){
+    // Only allow instance creation if there are active instance widgets.
+    if(empty($asset->instance->widgets)){
+      return FALSE;
+    }
+  }
+  if (user_access('administer assets', $account)) {
+    return TRUE;
+  }
+  // if (isset($asset) && is_object($asset) && $type_name = $asset->type) {
+  //   $op = ($op == 'view') ? 'view' : 'edit';
+  //   if (user_access("$op any $type_name asset", $account)) {
+  //     return TRUE;
+  //   }
+  // }
+  return FALSE;
+}
+
+/**
+ * Access callback for the entity API.
+ */
+function asset_type_access($op, $type = NULL, $account = NULL) {
+  return user_access('administer asset types', $account);
+}
+
+/**
+ * Access callback for the entity API.
+ */
+function asset_instance_access($op, $instance = NULL, $account = NULL) {
+  return user_access('administer asset instances', $account);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Asset Tools
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Menu title callback for showing individual entities
+ */
+function asset_page_title(Asset $asset){
+  return $asset->name;
+}
+
+/**
+ * Sets up content to show an individual asset
+ * @todo - get rid of drupal_set_title();
+ */
+function asset_page_view($asset, $view_mode = 'full') {
+  drupal_set_title($asset->name);
+  $content = asset_render($asset, $view_mode);
+  return $content;
+}
+
+/**
+ * Render an inidividual asset.
+ */
+function asset_render($asset, $view_mode = 'asset') {
+  $controller = entity_get_controller('asset');
+  $content = $controller->view(array($asset->id => $asset), $view_mode);
+  return $content;
+}
+
+/**
+ * Implements template_preprocess_entity().
+ */
+function asset_preprocess_entity(&$vars) {
+  if(empty($vars['asset']) || empty($vars['asset']->instance)) return;
+  module_load_include('inc', 'asset', 'theme/asset.theme');
+  drupal_alter('preprocess_asset', $vars);
+  _asset_preprocess_entity($vars);
+}
+
+/**
+ * Load an asset and place a rendered version of it in javascript.
+ *
+ * @param $asset_id
+ *   Can be either an asset object or asset id.
+ */
+function asset_load_js($asset_id, $instance_id = 0, $view_mode = 'asset', $reset = FALSE){
+  $added = &drupal_static(__FUNCTION__);
+  $instance_id = is_null($instance_id) ? 0 : $instance_id;
+  if(is_a($asset_id, 'Asset')){
+    $asset = $asset_id;
+    $asset_id = $asset->id;
+  }
+  $key = $asset_id . '-' . $instance_id;
+  if (!isset($added[$key]) || $reset) {
+    if(!isset($asset) || $reset) $asset = asset_load($asset_id, $instance_id, $reset);
+    if(empty($asset->id)) return;
+    $view = asset_render($asset, $view_mode);
+    drupal_add_js(array('asset' => array('render' => array($key => drupal_render($view)))), 'setting');
+    $added[$key] = $asset;
+  }
+  return $added[$key];
+}
+
+/**
+ * Fetch a asset object. Make sure that the wildcard you choose
+ * in the asset entity definition fits the function name here.
+ *
+ * @param $id
+ *   Integer specifying the asset id.
+ * @param $instance_id
+ *   Integer specifying the instance id to be attached to the asset being loaded.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   A fully-loaded $asset object or FALSE if it cannot be loaded.
+ *
+ * @see asset_load_multiple()
+ */
+function asset_load($id, $instance_id = NULL, $reset = FALSE) {
+  $assets = asset_load_multiple(array($id), array(), $instance_id, $reset);
+  return reset($assets);
+}
+
+/**
+ * Fetch all asset instances belonging to a given asset_id.
+ *
+ * @param $ids
+ *   Integer specifying the asset id.
+ * @param $conditions
+ *   An array of conditions to match against the {asset_instance} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of asset objects, indexed by id.
+ */
+function asset_load_all_instances($id, $reset = FALSE) {
+  $assets = array();
+  if($asset = asset_load($id)){
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'asset_instance')
+      ->propertyCondition('asset_id', $id);
+    $result = $query->execute();
+    if (isset($result['asset_instance'])) {
+      $ids = array_keys($result['asset_instance']);
+      foreach($ids as $instance_id){
+        $assets[$instance_id] = asset_load($id, $instance_id);
+      }
+    }
+  }
+  return $assets;
+}
+
+/**
+ * Load multiple assets based on certain conditions.
+ *
+ * @param $ids
+ *   An array of asset IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {asset} table.
+ * @param $instance_id
+ *   Integer specifying the instance id to be attached to the assets being loaded.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of asset objects, indexed by id.
+ *
+ * @see entity_load()
+ * @see asset_load()
+ */
+function asset_load_multiple($ids = array(), $conditions = array(), $instance_id = NULL, $reset = FALSE) {
+  $entity_type = 'asset';
+  if ($reset) {
+    entity_get_controller($entity_type)->resetCache();
+  }
+  return entity_get_controller($entity_type)->load($ids, $conditions, $instance_id);
+}
+
+/**
+ * Fetch default instance id from an asset.
+ */
+function asset_load_default_instance($asset_id){
+  $result = db_select('asset', 'a')
+    ->fields('a', array('instance_id'))
+    ->condition('id', $asset_id)
+    ->execute()
+    ->fetchAssoc();
+  return isset($result['instance_id']) ? $result['instance_id'] : NULL;
+}
+
+/**
+ * Create a asset object.
+ */
+function asset_create($values = array()) {
+  return entity_get_controller('asset')->create($values);
+}
+
+/**
+ * Saves a asset to the database.
+ *
+ * @param $asset
+ *   The asset object.
+ */
+function asset_save(Asset $asset) {
+  return $asset->save();
+}
+
+/**
+ * Deletes a asset.
+ */
+function asset_delete(Asset $asset) {
+  $asset->delete();
+}
+
+/**
+ * Delete multiple assets.
+ *
+ * @param $ids
+ *   An array of asset IDs.
+ */
+function asset_delete_multiple(array $ids) {
+  entity_get_controller('asset')->delete($ids);
+}
+
+/**
+ * Find all orphan asset. Orphan assets are those which are not
+ * used anywhere on the site.
+ */
+function asset_orphans(){
+  $purge_types = array();
+  foreach(asset_get_types() as $type){
+    if(!empty($type->data['purge'])){
+      $purge_types[] = $type->type;
+    }
+  }
+  $query = db_select('asset', 'a');
+  $query->leftJoin('asset_usage', 'u', 'u.asset_id = a.id');
+  $results = $query->fields('a')
+    ->condition('type', $purge_types, 'IN')
+    ->isNull('u.entity_id')
+    ->execute()
+    ->fetchAll();
+  $orphans = array();
+  foreach($results as $orphan){
+    $usage = asset_usage($orphan->id);
+    // Check usage for suspected assets.
+    if(empty($usage['total'])){
+      $orphans[] = $orphan->id;
+    }
+  }
+  return $orphans;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Asset Type Tools
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Render the asset browser.
+ */
+function asset_type_browser(AssetType $asset_type, $view_mode = 'asset', $js_load_assets = FALSE){
+  $output = array();
+  $output['#prefix'] = '<div class="asset-browser clearfix">';
+  $output['#suffix'] = '</div>';
+
+  $output['#attached']['css'][] = drupal_get_path('module','asset') . '/css/asset.browser.css';
+  $output['#attached']['js'][] = drupal_get_path('module','asset') . '/js/asset.browser.js';
+
+  $view_name = 'asset_' . $asset_type->type;
+  $display_id = 'default';
+  $args = array();
+  if($view = views_get_view($view_name)){
+    $view->set_arguments($args);
+    $view->set_display($display_id);
+    // $view->set_items_per_page($results_per_page);
+    $view->execute();
+    $count = count( $view->result );
+    $view->asset_view_mode = $view_mode;
+    $view->asset_js_load = $js_load_assets;
+    $output['view']['#markup'] = $view->preview($display_id, $args);
+    $view->destroy();
+    // $output['status'] = array(
+    //   '#markup' => theme('status_messages'),
+    //   '#weight' => -10,
+    // );
+  }
+  else{
+    drupal_set_message(t('Count not find browser for the %name asset type.', array('%name' => $asset_type->name)), 'warning');
+  }
+  return $output;
+}
+
+/**
+ * Menu argument loader; Load a asset type by string.
+ *
+ * @param $type
+ *   The machine-readable name of a asset type to load.
+ * @return
+ *   A asset type array or FALSE if $type does not exist.
+ */
+function asset_type_load($type) {
+  return asset_get_types($type);
+}
+
+/**
+ * Load multiple asset types.
+ */
+function asset_type_load_multiple($ids = array(), $conditions = array(), $instance_id = NULL, $reset = FALSE) {
+  $entity_type = 'asset_type';
+  if ($reset) {
+    entity_get_controller($entity_type)->resetCache();
+  }
+  return entity_get_controller($entity_type)->load($ids, $conditions, $instance_id);
+}
+
+/**
+ * Gets an array of all asset types, keyed by the type name.
+ *
+ * @param $type_name
+ *   If set, the type with the given name is returned.
+ * @return AssetType[]
+ *   Depending whether $type isset, an array of asset types or a single one.
+ */
+function asset_get_types($type_name = NULL) {
+  // entity_load will get the Entity controller for our asset entity and call the load
+  // function of that object - we are loading entities by name here.
+  $types = entity_load_multiple_by_name('asset_type', isset($type_name) ? array($type_name) : FALSE);
+  return isset($type_name) ? reset($types) : $types;
+}
+
+/**
+ * Saves a asset type to the db.
+ */
+function asset_type_save(AssetType $type) {
+  $type->save();
+}
+
+/**
+ * Deletes a asset type from the db.
+ */
+function asset_type_delete(AssetType $type) {
+  $type->delete();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Asset Instance Tools
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Fetch a asset instance object. Make sure that the wildcard you choose
+ * in the asset entity definition fits the function name here.
+ *
+ * @param $id
+ *   Integer specifying the asset instance id.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   A fully-loaded $asset object or FALSE if it cannot be loaded.
+ *
+ * @see asset_load_multiple()
+ */
+function asset_instance_load($id, $reset = FALSE) {
+  $asset_instances = asset_instance_load_multiple(array($id), array(), $reset);
+  return reset($asset_instances);
+}
+
+/**
+ * Fetch all asset instances belonging to a given asset_id.
+ *
+ * @param $ids
+ *   Integer specifying the asset id.
+ * @param $conditions
+ *   An array of conditions to match against the {asset_instance} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of asset objects, indexed by id.
+ */
+function asset_instance_load_by_asset($id, $reset = FALSE) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'asset_instance')
+    ->propertyCondition('asset_id', $id);
+  $result = $query->execute();
+  if (isset($result['asset_instance'])) {
+    $ids = array_keys($result['asset_instance']);
+    return asset_instance_load_multiple($ids, array(), $reset);
+  }
+  return array();
+}
+
+/**
+ * Load multiple assets based on certain conditions.
+ *
+ * @param $ids
+ *   An array of asset instance IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {asset_instance} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of asset objects, indexed by id.
+ *
+ * @see entity_load()
+ * @see asset_load()
+ */
+function asset_instance_load_multiple($ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('asset_instance', $ids, $conditions, $reset);
+}
+
+/**
+ * Create a asset object.
+ */
+function asset_instance_create($asset, $values = array()) {
+  $values['asset'] = $asset;
+  return entity_get_controller('asset_instance')->create($values);
+}
+
+/**
+ * Saves a asset to the database.
+ *
+ * @param $asset
+ *   The asset object.
+ */
+function asset_instance_save(Asset $asset_instance) {
+  return $asset_instance->save();
+}
+
+/**
+ * Deletes a asset.
+ */
+function asset_instance_delete(Asset $asset_instance) {
+  $asset_instance->delete();
+}
+
+/**
+ * Delete multiple assets.
+ *
+ * @param $ids
+ *   An array of asset IDs.
+ */
+function asset_instance_delete_multiple(array $ids) {
+  entity_get_controller('asset_instance')->delete($ids);
+}
+
+/**
+ * Find all orphan asset instances. Orphan instances are those which are not
+ * used anywhere on the site.
+ */
+function asset_instance_orphans(){
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'asset_instance');
+  $results = $query->execute();
+  $orphans = array();
+  if(!empty($results['asset_instance'])){
+    $ids = array_keys($results['asset_instance']);
+    $used_instances = asset_usage_instances();
+    $orphans = array_diff($ids, $used_instances);
+    sort($orphans);
+  }
+  return $orphans;
+}
+
+/**
+ * Will remove all instances that are not being used.
+ */
+function asset_instance_cleanup(){
+  foreach(asset_instance_orphans() as $instance_id){
+    $instance = asset_instance_load($instance_id);
+    $instance->delete();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Asset Usage Tools
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Fetch asset usage.
+ */
+function asset_usage($asset_id = NULL, $reset = FALSE){
+  $usage = &drupal_static(__FUNCTION__);
+  if (!isset($usage)) {
+    if (($cache = cache_get('asset_usage')) && !$reset) {
+      $usage = $cache->data;
+    }
+    else {
+      $usage = array();
+      asset_usage_get($usage);
+      asset_usage_defaults_get($usage);
+      asset_usage_entityreference_get($usage);
+      foreach($usage as &$u){
+        ksort($u);
+      }
+      cache_set('asset_usage', $usage, 'cache');
+    }
+  }
+  if($asset_id){
+    return isset($usage[$asset_id]) ? $usage[$asset_id] : array();
+  }
+  return $usage;
+}
+
+/**
+ * Get a list of all instances being used.
+ */
+function asset_usage_instances(){
+  $usage = asset_usage(NULL, TRUE);
+  $instances = array();
+  foreach($usage as $asset){
+    // Record any instances used in content.
+    if(!empty($asset['content'])){
+      foreach($asset['content'] as $instance_id => $data){
+        $instances[$instance_id] = $instance_id;
+      }
+    }
+    // Make sure default instances are recorded as used.
+    if(!empty($asset['default'])){
+      $instances[$asset['default']] = $asset['default'];
+    }
+  }
+  return $instances;
+}
+
+/**
+ * Fetch asset usage for content.
+ */
+function asset_usage_get(&$usage){
+  $results = db_select('asset_usage', 'a')
+    ->fields('a')
+    ->execute()
+    ->fetchAll();
+  foreach($results as $use){
+    $usage[$use->asset_id]['total'] = isset($usage[$use->asset_id]['total']) ? $usage[$use->asset_id]['total'] + 1 : 1;
+    $usage[$use->asset_id]['total_content'] = isset($usage[$use->asset_id]['total_content']) ? $usage[$use->asset_id]['total_content'] + 1 : 1;
+    $usage[$use->asset_id]['content'][$use->instance_id][] = (array) $use;
+  }
+}
+
+/**
+ * Fetch asset default instances.
+ */
+function asset_usage_defaults_get(&$usage){
+  $query = db_select('asset', 'a');
+  $query->join('asset_instance', 'i', 'a.instance_id = i.id');
+  $results = $query->fields('a', array('id', 'instance_id'))
+    ->isNotNull('a.instance_id')
+    ->execute()
+    ->fetchAll();
+  foreach($results as $use){
+    // Add default, but only if the instance exists.
+    $usage[$use->id]['default'] = $use->instance_id;
+  }
+}
+
+/**
+ * Fetch asset usage for entity references.
+ */
+function asset_usage_entityreference_get(&$usage){
+  if(module_exists('entityreference')){
+    $fields = field_info_fields();
+    foreach($fields as $field_name => $field){
+      if($field['type'] == 'entityreference' && $field['settings']['target_type'] == 'asset'){
+        $results = db_select('field_data_' . $field_name, 'c')
+          ->fields('c')
+          ->execute()
+          ->fetchAll();
+        if(!empty($results)){
+          foreach($results as $use){
+            $asset_id = $use->{$field_name . '_target_id'};
+            $usage[$asset_id]['total'] = isset($usage[$asset_id]['total']) ? $usage[$asset_id]['total'] + 1 : 1;
+            $usage[$asset_id]['total_referenced'] = isset($usage[$asset_id]['total_referenced']) ? $usage[$asset_id]['total_referenced'] + 1 : 1;
+            $usage[$asset_id]['referenced'][] = array(
+              'entity_type' => $use->entity_type,
+              'entity_id' => $use->entity_id,
+              // 'bundle' => $use->bundle,
+              // 'revision_id' => $use->revision_id,
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
+function asset_usage_create(){
+  return array(
+    'entity_type' => NULL,
+    'entity_id'   => NULL,
+    'bundle'      => NULL,
+    'field_name'  => NULL,
+    'asset_id'    => NULL,
+    'instance_id' => 0,
+  );
+}
+
+/**
+ * Save usage to the database.
+ */
+function asset_usage_save($usage){
+  $usage = $usage + asset_usage_create();
+  if(empty($usage['instance_id'])){
+    $usage['instance_id'] = 0;
+  }
+  db_merge('asset_usage')
+    ->key($usage)
+    ->execute();
+}
+
+/**
+ * Clear usage cache. Usage will be recalculated next time it is requested.
+ */
+function asset_usage_clear(){
+  // Clear usage cache.
+  cache_clear_all('asset_usage', 'cache');
+}
+
+/**
+ * Purge usage for a given entity and field.
+ */
+function asset_usage_purge($conditions = array()){
+  if(!empty($conditions)){
+    $query = db_delete('asset_usage');
+    $keys = asset_usage_create();
+    foreach($conditions as $condition => $value){
+      if(array_key_exists($condition, $keys)){
+        $query->condition($condition, $value);
+      }
+    }
+    return $query->execute();
+  }
+}
+
+/**
+ * Purge usage for a given instance.
+ */
+function asset_usage_purge_by_instance($instance_id){
+  $query = db_delete('asset_usage')
+    ->condition('instance_id', $instance_id);
+  return $query->execute();
+}
+
+/**
+ * Purge usage for a given asset.
+ */
+function asset_usage_purge_by_asset($asset_id){
+  $query = db_delete('asset_usage')
+    ->condition('asset_id', $asset_id);
+  return $query->execute();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Asset Widget Tools
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Fetch active instances plugins by asset type
+ */
+function asset_widget_get_active($asset_type_id){
+  $asset_type = asset_type_load($asset_type_id);
+  return $asset_type->widget_load();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Views
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Implements hook_views_api().
+ */
+function asset_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'asset') . '/views',
+  );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Inline Entity Form
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Inline entity form "add existing" alter
+ */
+function asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
+  module_load_include('inc', 'asset', 'asset.inlineEntityForm');
+  _asset_inline_entity_form_reference_form_alter($form, $form_state);
+}
+
+function asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
+  module_load_include('inc', 'asset', 'asset.inlineEntityForm');
+  _asset_inline_entity_form_entity_form_alter($form, $form_state);
+}
+
+function asset_field_widget_inline_entity_form_form_alter(&$element, &$form_state, $context){
+  module_load_include('inc', 'asset', 'asset.inlineEntityForm');
+  _asset_field_widget_inline_entity_form_form_alter($element, $form_state, $context);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Ctools
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+* Implements hook_ctools_plugin_directory().
+*/
+function asset_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'asset') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+* Implements hook_ctools_plugin_type().
+*
+* Has plenty options. See ctools/help/plugins-creating.html
+*/
+function asset_ctools_plugin_type() {
+  $plugins = array(
+    'widget' => array(
+      'classes' => array('class'),
+    ),
+  );
+  drupal_alter('asset_plugin_widgets', $plugins);
+  return $plugins;
+}
+
+/**
+ * Fetch metadata for one asset plugin by the given name.
+ */
+function asset_get_plugin($plugin_name) {
+  ctools_include('plugins');
+  $plugin = ctools_get_plugins('asset', $plugin_name);
+  // If you alter the plugin handler, be sure the new handler is registerd or
+  // you include it in some other way.
+  drupal_alter('asset_plugin', $plugin);
+  uasort($plugin, 'drupal_sort_weight');
+  return $plugin;
+}
+
+/**
+* Get the links handlers.
+*
+* @param $handler
+* The links handler name.
+*/
+function asset_get_handler($type, $name) {
+  $object_cache = drupal_static(__FUNCTION__);
+  if (!isset($object_cache[$name])) {
+    ctools_include('plugins');
+    $class = ctools_plugin_load_class('asset', $type, $name, 'class');
+    $class = class_exists($class) ? $class : 'Asset'.ucfirst($type).'Broken';
+    $all_args = func_get_args();
+    $args = array_slice($all_args, 2);
+    $object_cache[$name] = new $class($name, $args);
+  }
+  return $object_cache[$name];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Tools
+////////////////////////////////////////////////////////////////////////////////
+
+function asset_parents_to_name($parents){
+  $name = array_shift($parents);
+  $string = $name;
+  $string .= '[' . implode('][', $parents) . ']';
+  return $string;
+}
+
+/**
+ * Replacement for field_info_instance that allows us to load in our
+ * default settings if necessary.
+ */
+function asset_field_info_instance($entity_type, $field_name, $bundle_name) {
+  $instance = field_info_instance($entity_type, $field_name, $bundle_name);
+  // Load in asset defaults if requested.
+  if(!empty($instance['settings']['asset']['default'])){
+    $instance['settings']['asset']['settings'] = variable_get('asset', array());
+  }
+  return $instance;
+}

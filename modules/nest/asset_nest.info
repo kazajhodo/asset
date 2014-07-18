@@ -1,0 +1,8 @@
+name        = Asset Nest
+description = Provides a field widget for inline entity form fields that allows for easy inserting of assets into a grid.
+package     = Asset
+core        = 7.x
+version     = "7.x-1.0"
+
+dependencies[] = asset
+dependencies[] = inline_entity_form

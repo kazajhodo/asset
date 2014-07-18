@@ -1,0 +1,149 @@
+.asset-browser .view:before,
+.asset-browser .view:after{
+  content: " ";
+  display: table;
+}
+
+.asset-browser .view:after {
+  clear: both;
+}
+
+.asset-browser .view-content{
+  margin-left:-6px;
+  margin-right:-6px;
+}
+
+.asset-browser .views-row{
+  position:relative;
+  display:inline-block;
+  overflow:hidden;
+  padding:0;
+  background:#3f3f3f;
+  color:#fff;
+  font-shadow: 0 -1px 0 #000;
+  width:170px;
+  height:100px;
+  margin:5px;
+  text-align: center;
+  overflow:hidden;
+}
+
+.asset-browser .views-row .views-field-name{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  background:rgba(0,0,0,.5);
+  font-size:11px;
+  line-height:11px;
+  padding:5px;
+}
+
+.asset-browser .views-row .views-field-field-asset-file{
+  padding-top:30px;
+}
+
+.asset-browser .views-row .views-field-field-asset-file a{
+  display:none;
+}
+
+.asset-browser .views-row .asset-select{
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  bottom:0;
+  z-index:10;
+  overflow:hidden;
+  color:#fff;
+  text-shadow: 0 0 5px #000;
+  font-size:40px;
+  background-color:rgba(0,0,0, 0);
+  -webkit-transition: background .3s ease-out;
+  -moz-transition: background .3s ease-out;
+  -o-transition: background .3s ease-out;
+  transition: background .3s ease-out;
+}
+
+.asset-browser .views-row .asset-select span{
+  margin-top:-40px;
+  display:block;
+  text-align: center;
+  -webkit-transition: margin .3s ease-out;
+  -moz-transition: margin .3s ease-out;
+  -o-transition: margin .3s ease-out;
+  transition: margin .3s ease-out;
+}
+
+.asset-browser .views-row .asset-select:hover{
+  background-color:rgba(0,0,0, .5);
+}
+
+.asset-browser .views-row .asset-select:hover span{
+  margin-top:25px;
+}
+
+.asset-browser .views-row .asset-select:focus{
+  outline: none;
+}
+
+.asset-browser .views-exposed-form .views-exposed-widgets{
+  margin:0;
+  padding-bottom:15px;
+  border-bottom:1px dotted #636363;
+  margin-bottom:10px;
+}
+
+.asset-browser .views-exposed-form .views-exposed-widgets .views-exposed-widget{
+  padding:0 2px 0 0;
+}
+
+.asset-browser .views-exposed-form .views-exposed-widgets .views-exposed-widget label{
+  color:#cecece;
+  margin:0;
+  padding:0;
+  font-size:.8em;
+  text-transform: uppercase;
+}
+
+/**
+ * Inline Entity Browser
+ */
+
+.asset-inline-entity-browser .form-wrapper{
+  /*padding: 20px 0 0;*/
+}
+
+.asset-inline-entity-browser fieldset.ief-form{
+  /*background:#f0f0f0;*/
+  padding:10px 15px 15px;
+}
+
+.asset-inline-entity-browser button{
+  margin:0;
+}
+
+.asset-inline-entity-browser fieldset.ief-form .form-wrapper button.text{
+  color:#fff;
+}
+
+.asset-inline-entity-browser fieldset.ief-form .form-wrapper button.text:hover{
+  color:#3f3f3f;
+}
+
+.asset-inline-entity-browser fieldset.ief-form .fieldset-wrapper{
+  background: #3e3e3e;
+  border: none !important;
+  margin:5px;
+  padding:15px;
+}
+
+.asset-inline-entity-browser fieldset.ief-form .fieldset-wrapper .form-wrapper{
+  padding-top:15px;
+  border-top:1px dotted #636363;
+  margin-top:10px;
+}
+
+.asset-inline-entity-browser fieldset.ief-form .asset-browser .views-row{
+  border:1px solid #545454;
+}

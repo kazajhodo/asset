@@ -1,0 +1,17 @@
+.asset-color-dark,
+.asset-color-dark h2,
+.asset-color-dark h3,
+.asset-color-dark h4,
+.asset-color-dark h5,
+.asset-color-dark h6{
+  color:#2b2b2b;
+}
+
+.asset-color-light,
+.asset-color-light h2,
+.asset-color-light h3,
+.asset-color-light h4,
+.asset-color-light h5,
+.asset-color-light h6{
+  color:#fff;
+}

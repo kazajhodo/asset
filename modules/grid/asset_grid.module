@@ -1,0 +1,478 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function asset_grid_theme() {
+  return array(
+    'asset_grid_form_field' => array(
+      'render element' => 'form',
+    ),
+    // Interfect assets of type [grid]
+    'asset__grid' => array(
+      'render element' => 'elements',
+      'template' => 'asset--grid',
+      'base hook' => 'asset',
+      'path' => drupal_get_path('module', 'asset_grid') . '/theme'
+    ),
+    // Interfect assets of type [grid_item]
+    'asset__grid_item' => array(
+      'render element' => 'elements',
+      'template' => 'asset--grid-item',
+      'base hook' => 'asset',
+      'path' => drupal_get_path('module', 'asset_grid') . '/theme'
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function asset_grid_field_widget_info() {
+  $widgets = array();
+  $widgets['inline_entity_form_asset_grid'] = array(
+    'label' => t('Asset Grid'),
+    'field types' => array('entityreference'),
+    'settings' => array(
+      'fields' => array(),
+      'type_settings' => array(),
+    ),
+    'behaviors' => array(
+      'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+      'default value' => FIELD_BEHAVIOR_NONE,
+    ),
+  );
+  return $widgets;
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Adds the IEF submit function and the #ief_submit_all flag to the main submit
+ * button of a form that contains an IEF widget.
+ * Needs to be done in an alter hook because many forms add the submit button
+ * after inline_entity_form_field_widget_form() is called.
+ */
+function asset_grid_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form_state['inline_entity_form'])) {
+    $is_grid = FALSE;
+    foreach($form_state['field'] as $field_name => $data){
+      foreach($data as $language => $field){
+        if(!empty($field['instance']['widget']['type']) && $field['instance']['widget']['type'] == 'inline_entity_form_asset_grid') $is_grid = TRUE;
+      }
+    }
+    if($is_grid){
+      $form['#attributes']['class'][] = 'has-asset-grid';
+    }
+  }
+}
+
+
+/**
+ * Implements hook_preprocess_entity_alter().
+ */
+function asset_grid_preprocess_asset_alter(&$vars) {
+  // if(empty($vars['asset']) || empty($vars['asset']->instance)) return;
+  if($vars['asset']->type != 'grid') return;
+
+  if(!empty($vars['field_asset_ref_image']) && !empty($vars['field_asset_ref_image'][0]['entity'])){
+    $wrapper = entity_metadata_wrapper('asset', $vars['field_asset_ref_image'][0]['entity']);
+    if($image = $wrapper->field_asset_image->value()){
+      $vars['wrapper_styles']['background-image'] = 'background-image:url('.file_create_url($image['uri']).');background-position: center top;background-size: cover;';
+    }
+  }
+}
+
+/**
+ * Implements hook_field_widget_settings_form().
+ */
+function asset_grid_field_widget_settings_form($field, $instance) {
+  $element = inline_entity_form_field_widget_settings_form($field, $instance);
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_form()
+ */
+function asset_grid_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  // if(!isset($form_state['original_entity'])) $form_state['original_entity'] = clone $element['#entity'];
+  $widget = $instance['widget'];
+  $settings = inline_entity_form_settings($field, $instance);
+  $entity_type = $settings['entity_type'];
+  $asset_type = asset_type_load($element['#entity']->type);
+  // Run through the default inline entity form setup.
+  $element = inline_entity_form_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
+  $element['#attached']['css'][] = drupal_get_path('module','asset_grid') . '/css/asset_grid.form.css';
+  $element['#attached']['js'][] = drupal_get_path('module','asset_grid') . '/js/asset_grid.js';
+
+  $element['entities']['#theme'] = 'asset_grid_form_field';
+  $element['#title'] = '';
+  $element['entities']['#language'] = $element['#language'];
+  // $element['entities']['#entity'] = $form_state['original_entity'];
+  $element['entities']['#entity'] = $element['#entity'];
+  $element['entities']['#field'] = $field;
+  $element['entities']['#instance'] = $instance;
+  $element['#type'] = 'item';
+  $element['#prefix'] = !empty($element['#prefix']) ? $element['#prefix'] : '';
+  $element['#prefix'] .= '<div class="asset-grid-wrapper">';
+  $element['#suffix'] = !empty($element['#suffix']) ? $element['#suffix'] : '';
+  $element['#suffix'] = '</div>' . $element['#suffix'];
+
+  // Check see if any child elements are form enabled.
+  foreach (element_children($element['entities']) as $delta => $key) {
+    if(!empty($element['entities'][$key]['form'])){
+      $element['actions']['#access'] = FALSE;
+    }
+  }
+  if(!empty($element['form'])){
+    $element['form']['#type'] = 'container';
+    $element['entities']['#access'] = FALSE;
+  }
+  // $element['actions']['#type'] = 'actions';
+  $element['actions']['#attributes']['class'][] = 'asset-grid-actions';
+  $element['actions']['#attributes']['class'][] = isset($element['actions']['ief_add_existing']) ? 'asset-grid-actions-half' : 'asset-grid-actions-full';
+  $element['actions']['ief_add']['#attributes']['class'][] = 'asset-grid-item-add';
+  $element['actions']['ief_add']['#attributes']['class'][] = 'asset-grid-item';
+  $element['actions']['ief_add']['#attributes']['class'][] = 'secondary';
+  $element['actions']['ief_add_existing']['#attributes']['class'][] = 'asset-grid-item-existing';
+  $element['actions']['ief_add_existing']['#attributes']['class'][] = 'asset-grid-item';
+  $element['actions']['ief_add_existing']['#attributes']['class'][] = 'secondary';
+  // $element['actions']['ief_add']['#attributes']['class'][] = 'expand';
+  // $element['actions']['ief_add']['#attributes']['class'][] = 'tiny';
+  // $element['actions']['ief_add_existing']['#attributes']['class'][] = 'expand';
+  // $element['actions']['ief_add_existing']['#attributes']['class'][] = 'tiny';
+  return $element;
+}
+
+/**
+ * Inline entity form "add existing" alter
+ */
+function asset_grid_inline_entity_form_reference_form_alter(&$form, &$form_state){
+  // Actions should use action type.
+  if($form['actions']) $form['actions']['#type'] = 'actions';
+}
+
+/**
+ * Inline entity form alter
+ */
+function asset_grid_inline_entity_form_entity_form_alter(&$form, &$form_state){
+  // Actions should use action type.
+  // if($form['actions']) $form['actions']['#type'] = 'actions';
+  $form['actions']['#attributes']['class'][] = 'asset-grid-actions';
+  $form['actions']['#attributes']['class'][] = 'asset-grid-actions-large';
+  // $form['actions']['#attributes']['class'][] = 'asset-grid-actions-half';
+  $form['actions']['#attributes']['class'][] = 'clearfix';
+  if(isset($form['actions']['ief_add_save'])){
+    $form['actions']['ief_add_save']['#attributes']['class'][] = 'asset-grid-update-save';
+  }
+  if(isset($form['actions']['ief_edit_save'])){
+    $form['actions']['ief_edit_save']['#attributes']['class'][] = 'asset-grid-update-save';
+  }
+  // $form['actions']['ief_add_save']['#value'] = '<i class="fa fa-save"></i>';
+  if(isset($form['actions']['ief_add_save'])){
+    $form['actions']['ief_add_cancel']['#attributes']['class'][] = 'asset-grid-update-cancel';
+    $form['actions']['ief_add_cancel']['#attributes']['class'][] = 'secondary';
+  }
+  if(isset($form['actions']['ief_edit_cancel'])){
+    $form['actions']['ief_edit_cancel']['#attributes']['class'][] = 'asset-grid-update-cancel';
+    $form['actions']['ief_edit_cancel']['#attributes']['class'][] = 'tiny';
+    $form['actions']['ief_edit_cancel']['#attributes']['class'][] = 'secondary';
+  }
+  // $form['actions']['ief_add_cancel']['#value'] = '<i class="fa fa-undo"></i>';
+}
+
+/**
+ * Themes the full entity output in a grid.
+ *
+ * @param $variables
+ *   Contains the form element data from $element['entities'].
+ */
+function theme_asset_grid_form_field($variables) {
+  $form = $variables['form'];
+  foreach (element_children($form) as $key) {
+    if(!empty($form[$key]['form'])){
+      return render($form[$key]['form']);
+    }
+  }
+  $field = $form['#field'];
+  $field_name = $field['field_name'];
+  $entity = $form['#entity'];
+  $entity_type = $form['#entity_type'];
+  $instance = $form['#instance'];
+  list($entity_id, , $bundle) = entity_extract_ids($entity_type, $entity);
+  $language = $form['#language'];
+  /**
+   * @TODO
+   * Allow the choice between displays. Defaulting to default right now.
+   */
+  $display = field_get_display($instance, 'default', $entity);
+  // Setup entity with temporary values.
+  $children = array();
+  $entity->{$field_name}[$language] = array();
+  foreach (element_children($form) as $delta => $key) {
+    $entity->{$field_name}[$language][$delta] = $form[$key]['#entity'];
+  }
+
+  $view = array();
+  $element['entities']['#access'] = FALSE;
+  $view = field_view_field($entity_type, $entity, $field_name, $display, $langcode = NULL);
+  foreach (element_children($view) as $key) {
+    // Support single level nesting output (asset_entity_view)
+    if(isset($view[$key][$entity_type])){
+      asset_grid_form_field_item($view[$key], $form[$delta]);
+    }
+    // Support dual level nesting output (asset_grid_entity_view)
+    foreach (element_children($view[$key]) as $delta) {
+      if(isset($view[$key][$delta][$entity_type])){
+        asset_grid_form_field_item($view[$key][$delta], $form[$delta]);
+      }
+    }
+  }
+  return render($view);
+}
+
+/**
+ * Alter entity output for asset grid form field
+ */
+function asset_grid_form_field_item(&$element, $form){
+  $element['actions'] = $form['actions'];
+  $element['actions']['#attributes']['class'][] = 'asset-grid-actions';
+  $element['actions']['#attributes']['class'][] = 'asset-grid-actions-half';
+  $element['actions']['ief_entity_edit']['#attributes']['class'][] = 'asset-grid-item-edit';
+  $element['actions']['ief_entity_edit']['#attributes']['class'][] = 'secondary';
+  $element['actions']['ief_entity_remove']['#attributes']['class'][] = 'asset-grid-item-remove';
+  $element['actions']['ief_entity_remove']['#attributes']['class'][] = 'secondary';
+}
+
+/**
+ * Implements hook_field_attach_submit().
+ */
+function asset_grid_field_attach_submit($parent_entity_type, $parent_entity, $form, &$form_state) {
+  // SUPER ugly workaround for a core inline entity form bug. The bug involved
+  // creating a new entity with a child ief form... after finishing creating that
+  // entity, any new entity created will contain some of the data from the first.
+  inline_entity_form_field_attach_submit($parent_entity_type, $parent_entity, $form, $form_state);
+  $ief_id = isset($form['#ief_id']) ? $form['#ief_id'] : NULL;
+  if($ief_id){
+    foreach($form_state['inline_entity_form'] as $ief_id_target => $data){
+      if($ief_id_target != $ief_id) $form_state['inline_entity_form'][$ief_id_target]['entities'] = array();
+    }
+  }
+}
+
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function asset_grid_field_formatter_info() {
+  return array(
+    'asset_grid_entity_view' => array( //Machine name of the formatter
+      'label' => t('Rendered asset in grid'),
+      'field types' => array('entityreference'), //This will only be available to text fields
+      'settings' => array(
+        'view_mode' => 'asset',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function asset_grid_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  if ($display['type'] == 'asset_grid_entity_view') {
+    $entity_info = entity_get_info($field['settings']['target_type']);
+    $options = asset_view_modes();
+    if (!empty($entity_info['view modes'])) {
+      foreach ($entity_info['view modes'] as $view_mode => $view_mode_settings) {
+        $options[$view_mode] = $view_mode_settings['label'];
+      }
+    }
+
+    $element['view_mode'] = array(
+      '#type' => 'select',
+      '#options' => $options,
+      '#title' => t('View mode'),
+      '#default_value' => $settings['view_mode'],
+      '#access' => count($options) > 1,
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function asset_grid_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  if ($display['type'] == 'asset_grid_entity_view') {
+    $entity_info = entity_get_info($field['settings']['target_type']);
+    $asset_view_modes = asset_view_modes();
+    $view_mode_label = isset($asset_view_modes[$settings['view_mode']]) ? $asset_view_modes[$settings['view_mode']] : $settings['view_mode'];
+    if (isset($entity_info['view modes'][$settings['view_mode']]['label'])) {
+      $view_mode_label = $entity_info['view modes'][$settings['view_mode']]['label'];
+    }
+    $summary[] = t('Rendered as @mode', array('@mode' => $view_mode_label));
+  }
+
+  return implode('<br />', $summary);
+}
+
+/**
+ * Implements hook_field_formatter_prepare_view().
+ */
+function asset_grid_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  $target_ids = array();
+
+  // Collect every possible entity attached to any of the entities.
+  foreach ($entities as $id => $entity) {
+    foreach ($items[$id] as $delta => $item) {
+      if (is_array($item) && isset($item['target_id'])) {
+        $target_ids[] = $item['target_id'];
+      }
+    }
+  }
+
+  if ($target_ids) {
+    $target_entities = entity_load($field['settings']['target_type'], $target_ids);
+  }
+  else {
+    $target_entities = array();
+  }
+
+  // Iterate through the fieldable entities again to attach the loaded data.
+  foreach ($entities as $id => $entity) {
+    $rekey = FALSE;
+
+    foreach ($items[$id] as $delta => $item) {
+      // Check whether the referenced entity could be loaded.
+      if (is_array($item) && isset($item['target_id']) && isset($target_entities[$item['target_id']])) {
+        // Replace the instance value with the term data.
+        $items[$id][$delta]['entity'] = $target_entities[$item['target_id']];
+        // Check whether the user has access to the referenced entity.
+        $has_view_access = (entity_access('view', $field['settings']['target_type'], $target_entities[$item['target_id']]) !== FALSE);
+        $has_update_access = (entity_access('update', $field['settings']['target_type'], $target_entities[$item['target_id']]) !== FALSE);
+        $items[$id][$delta]['access'] = ($has_view_access || $has_update_access);
+      }
+      // We allow the full object to be passed through.
+      elseif (is_object($item)) {
+        list($entity_id, , $bundle) = entity_extract_ids($field['settings']['target_type'], $item);
+        // Do nothing.
+        $items[$id][$delta] = array();
+        $items[$id][$delta]['target_id'] = $entity_id;
+        $items[$id][$delta]['entity'] = $item;
+        // Check whether the user has access to the referenced entity.
+        $has_view_access = (entity_access('view', $field['settings']['target_type'], $item) !== FALSE);
+        $has_update_access = (entity_access('update', $field['settings']['target_type'], $item) !== FALSE);
+        $items[$id][$delta]['access'] = ($has_view_access || $has_update_access);
+      }
+      // Otherwise, unset the instance value, since the entity does not exist.
+      else {
+        unset($items[$id][$delta]);
+        $rekey = TRUE;
+      }
+    }
+
+    if ($rekey) {
+      // Rekey the items array.
+      $items[$id] = array_values($items[$id]);
+    }
+  }
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function asset_grid_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $result = array();
+  $settings = $display['settings'];
+
+  // Rebuild the items list to contain only those with access.
+  foreach ($items as $key => $item) {
+    if (empty($item['access'])) {
+      unset($items[$key]);
+    }
+  }
+
+  switch ($display['type']) {
+    case 'asset_grid_entity_view':
+      // dsm($entity);
+      /**
+       * @TODO Allow grid to be more flexible.
+       */
+      $grid_size = $small = $medium = $large = 12;
+      $count = count($items);
+      $colspans = array();
+      foreach($items as $delta => $item){
+        if(!empty($item['entity']->instance->data['assetWidgetGrid'])){
+          $data = $item['entity']->instance->data['assetWidgetGrid'];
+          if(!empty($data['full'])){
+            $count = 1;
+          }
+          elseif(is_numeric($data['column']) && $data['column'] > 1){
+            $count += ($data['column'] -1);
+            $colspans[$delta] = $data['column'];
+          }
+        }
+      }
+      $column = $grid_size / $count;
+      switch($column){
+        case 3:
+          $medium = 6;
+          $large = $column;
+          break;
+        case 4:
+          $large = $column;
+          break;
+        case 6:
+          $medium = $column;
+          $large = $column;
+          break;
+      }
+
+      $result[0]['#prefix'] = '<div class="asset-grid-items row">';
+      $result[0]['#suffix'] = '</div>';
+
+      // $result[0]['#prefix'] = '<ul class="asset-grid-items small-block-grid-1 medium-block-grid-2 large-block-grid-' . count($items) . '">';
+      // $result[0]['#suffix'] = '</ul>';
+      foreach ($items as $delta => $item) {
+        // Protect ourselves from recursive rendering.
+        static $depth = 0;
+        $depth++;
+        if ($depth > 20) {
+          throw new EntityReferenceRecursiveRenderingException(t('Recursive rendering detected when rendering entity @entity_type(@entity_id). Aborting rendering.', array('@entity_type' => $entity_type, '@entity_id' => $item['target_id'])));
+        }
+
+        $entity = clone $item['entity'];
+        unset($entity->content);
+
+        $item_small = $small;
+        $item_medium = $medium;
+        $item_large = $large;
+        if(isset($colspans[$delta])){
+          $item_large *= $colspans[$delta];
+        }
+        $result[0][$delta] = entity_view($field['settings']['target_type'], array($item['target_id'] => $entity), $settings['view_mode'], $langcode, FALSE);
+        $result[0][$delta]['#prefix'] = '<div class="small-'.$item_small.' medium-'.$item_medium.' large-'.$item_large.' columns"><div class="asset-grid-wrapper">';
+        $result[0][$delta]['#suffix'] = '</div></div>';
+        // $result[0][$delta]['#prefix'] = '<li><div class="asset-grid-wrapper">';
+        // $result[0][$delta]['#suffix'] = '</div></li>';
+        $depth = 0;
+      }
+      break;
+  }
+  $result['#attached']['css'][] = drupal_get_path('module','asset_grid') . '/css/asset_grid.scss';
+  return $result;
+}
+
+function asset_grid_calculation(){
+
+}

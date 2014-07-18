@@ -1,0 +1,56 @@
+/**
+ * Form Elements
+ */
+.asset-padding-widget label{
+  text-align: center;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-left label,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-right label{
+  line-height:30px;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-top,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-left,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-right,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-bottom{
+  margin:0;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-top input,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-left input,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-right input,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-bottom input{
+  width:50px;
+  text-align: center;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-top label,
+.asset-position-bottom{
+  width:50px;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-left label,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-left input{
+  float:left;
+  margin-right:5px;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-right label,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-right input{
+  float:right;
+  margin-right:5px;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-top,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-bottom,
+.asset-position-bottom{
+  margin-left:43px;
+  clear:both;
+}
+
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-left,
+.asset-padding-widget .form-item-instance-form-data-assetWidgetPadding-right{
+  float:left;
+  display:inline-block;
+}

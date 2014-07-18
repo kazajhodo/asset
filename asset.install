@@ -1,1 +1,209 @@
 <?php
+
+/**
+ * Implements hook_schema().
+ */
+function asset_schema() {
+  $schema = array();
+
+  $schema['asset'] = array(
+    'description' => 'The base table for asset entities.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary Key: Identifier for a asset.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The {asset_type}.type of this asset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that owns this asset; initially, this is the user that created it.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'language' => array(
+        'description' => 'The language of the asset.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'The name of the asset - a human-readable identifier.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the asset was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the asset was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'instance_id' => array(
+        'description' => 'The default {asset_instance} id identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'type' => array('type'),
+      'uid'  => array('uid'),
+    ),
+  );
+
+  $schema['asset_type'] = array(
+    'description' => 'Stores information about defined asset types.',
+    'fields' => array(
+      'type' => array(
+        'description' => 'The machine-readable name of this asset type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The human-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'translatable' => TRUE,
+      ),
+      'plural' => array(
+        'description' => 'The human-readable plural name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'translatable' => TRUE,
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this asset type.',
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('type'),
+  );
+
+  $schema['asset_instance'] = array(
+    'description' => 'Stores information about defined asset instance.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique asset instance identifier.',
+      ),
+      'type' => array(
+        'description' => 'The {asset_type}.type of this asset.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'asset_id' => array(
+        'description' => 'The current asset id identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this asset instance.',
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'type' => array('type'),
+      'asset_id' => array('asset_id'),
+    ),
+  );
+
+  $schema['asset_usage'] = array(
+    'description' => 'Stores information about defined asset instance.',
+    'fields' => array(
+      'entity_type' => array(
+        'description' => 'The entity_type the asset is used within.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'entity_id' => array(
+        'description' => 'The entity id the asset is used within.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+      'bundle' => array(
+        'description' => 'The bundle the asset is used within.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'field_name' => array(
+        'description' => 'The field name the asset is used within.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'asset_id' => array(
+        'description' => 'The current asset id identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+      'instance_id' => array(
+        'description' => 'The current instance id identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'entity_type' => array('entity_type'),
+      'entity_id' => array('entity_id'),
+      'bundle' => array('bundle'),
+      'field_name' => array('field_name'),
+      'asset_id' => array('asset_id'),
+      'instance_id' => array('instance_id'),
+    ),
+  );
+
+  return $schema;
+}
