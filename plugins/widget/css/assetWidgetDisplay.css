@@ -1,0 +1,23 @@
+.asset-indent-t{
+  padding-top:80px;
+}
+
+.asset-indent-b{
+  padding-bottom:80px;
+}
+
+.asset-indent-r{
+  padding-right:80px;
+}
+
+.asset-indent-l{
+  padding-left:80px;
+}
+
+div.asset-flush-t{
+  margin-top:0;
+}
+
+div.asset-flush-b{
+  margin-bottom:0;
+}

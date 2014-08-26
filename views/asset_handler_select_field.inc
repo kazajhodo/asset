@@ -34,9 +34,10 @@ class asset_handler_select_field extends views_handler_field {
   function render($values) {
     // View mode can be passed to the view as an argument from within asset_browser().
     $view_mode = !empty($this->view->asset_view_mode) ? $this->view->asset_view_mode : NULL;
+    $asset_preview = !empty($this->view->asset_preview) ? $this->view->asset_preview : NULL;
     $bundle = entity_load('asset_type', array($values->asset_type));
     if(!empty($this->view->asset_js_load)){
-      $asset = asset_load_js($values->id, NULL, $view_mode);
+      $asset = asset_load_js($values->id, NULL, $view_mode, $asset_preview);
     }
     $instance_enabled = 0;
     $output = '<a id="asset-select-'.$values->id.'" class="asset-select" href="#" data-instance="'.$instance_enabled.'" data-id="'.$values->id.'"><span><i class="fa fa-plus"></i></span></a>';

@@ -3,22 +3,12 @@
 require_once dirname(__FILE__) . '/includes/asset.field.inc';
 require_once dirname(__FILE__) . '/includes/asset.fieldAdmin.inc';
 require_once dirname(__FILE__) . '/includes/asset.fieldWidget.inc';
+require_once dirname(__FILE__) . '/includes/asset.viewModes.inc';
 require_once dirname(__FILE__) . '/includes/asset.cron.inc';
 
 function asset_init(){
   // Make sure widget classes are available on each request.
   asset_get_plugin('widget');
-  // Load global asset css
-  // if(module_exists('sonar')){
-  //   drupal_add_css(drupal_get_path('module','asset') . '/css/asset.scss');
-  // }
-
-  // $usage = asset_usage(1, $reset = TRUE);
-  // dsm($usage);
-  // dsm(asset_usage(NULL, $reset = TRUE));
-  // asset_instance_cleanup();
-  // dsm(asset_instance_orphans());
-  // dsm(asset_orphans());
 }
 
 /**
@@ -138,6 +128,15 @@ function asset_entity_info_alter(&$entity_info) {
         'access arguments' => array('administer asset types'),
       ),
     );
+  }
+  // Add in custom created view modes.
+  if($view_modes = variable_get('asset_view_modes', FALSE)){
+    foreach($view_modes as $key => $label){
+      $entity_info['asset']['view modes'][$key] = array(
+        'label' => t($label),
+        'custom settings' => FALSE
+      );
+    }
   }
 }
 
@@ -338,12 +337,12 @@ function asset_access($op, $asset = NULL, $account = NULL) {
   if (user_access('administer assets', $account)) {
     return TRUE;
   }
-  // if (isset($asset) && is_object($asset) && $type_name = $asset->type) {
-  //   $op = ($op == 'view') ? 'view' : 'edit';
-  //   if (user_access("$op any $type_name asset", $account)) {
-  //     return TRUE;
-  //   }
-  // }
+  if (isset($asset) && is_object($asset) && $type_name = $asset->type) {
+    $op = ($op == 'view') ? 'view' : 'edit';
+    if (user_access("$op any $type_name asset", $account)) {
+      return TRUE;
+    }
+  }
   return FALSE;
 }
 
@@ -386,7 +385,8 @@ function asset_page_view($asset, $view_mode = 'full') {
 /**
  * Render an inidividual asset.
  */
-function asset_render($asset, $view_mode = 'asset') {
+function asset_render($asset, $view_mode = 'default', $preview = FALSE) {
+  $asset->asset_preview = $preview;
   $controller = entity_get_controller('asset');
   $content = $controller->view(array($asset->id => $asset), $view_mode);
   return $content;
@@ -402,13 +402,25 @@ function asset_preprocess_entity(&$vars) {
   _asset_preprocess_entity($vars);
 }
 
+function asset_entity_view_mode_alter(&$view_mode, $context){
+  // if ($context['entity_type'] == 'asset' && $view_mode !== 'full') {
+  //   $asset = $context['entity'];
+  //   // Allow widgets to change the view mode.
+  //   if(!empty($asset->instance->id)){
+  //     foreach($asset->instance->widgets as $widget_id => $widget){
+  //       $widget->viewMode($view_mode);
+  //     }
+  //   }
+  // }
+}
+
 /**
  * Load an asset and place a rendered version of it in javascript.
  *
  * @param $asset_id
  *   Can be either an asset object or asset id.
  */
-function asset_load_js($asset_id, $instance_id = 0, $view_mode = 'asset', $reset = FALSE){
+function asset_load_js($asset_id, $instance_id = 0, $view_mode = 'default', $preview = FALSE, $reset = FALSE){
   $added = &drupal_static(__FUNCTION__);
   $instance_id = is_null($instance_id) ? 0 : $instance_id;
   if(is_a($asset_id, 'Asset')){
@@ -419,7 +431,9 @@ function asset_load_js($asset_id, $instance_id = 0, $view_mode = 'asset', $reset
   if (!isset($added[$key]) || $reset) {
     if(!isset($asset) || $reset) $asset = asset_load($asset_id, $instance_id, $reset);
     if(empty($asset->id)) return;
-    $view = asset_render($asset, $view_mode);
+    // $asset->asset_view_mode = $view_mode;
+    $asset->asset_preview = $preview;
+    $view = asset_render($asset, $view_mode, $preview);
     drupal_add_js(array('asset' => array('render' => array($key => drupal_render($view)))), 'setting');
     $added[$key] = $asset;
   }
@@ -560,7 +574,9 @@ function asset_orphans(){
   $query = db_select('asset', 'a');
   $query->leftJoin('asset_usage', 'u', 'u.asset_id = a.id');
   $results = $query->fields('a')
-    ->condition('type', $purge_types, 'IN')
+    ->condition('a.type', $purge_types, 'IN')
+    // Older than 6 hours
+    ->condition('a.changed', time() - 21600, '<')
     ->isNull('u.entity_id')
     ->execute()
     ->fetchAll();
@@ -583,7 +599,7 @@ function asset_orphans(){
 /**
  * Render the asset browser.
  */
-function asset_type_browser(AssetType $asset_type, $view_mode = 'asset', $js_load_assets = FALSE){
+function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_load_assets = FALSE){
   $output = array();
   $output['#prefix'] = '<div class="asset-browser clearfix">';
   $output['#suffix'] = '</div>';
@@ -601,13 +617,10 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'asset', $js_loa
     $view->execute();
     $count = count( $view->result );
     $view->asset_view_mode = $view_mode;
+    $view->asset_preview = TRUE;
     $view->asset_js_load = $js_load_assets;
     $output['view']['#markup'] = $view->preview($display_id, $args);
     $view->destroy();
-    // $output['status'] = array(
-    //   '#markup' => theme('status_messages'),
-    //   '#weight' => -10,
-    // );
   }
   else{
     drupal_set_message(t('Count not find browser for the %name asset type.', array('%name' => $asset_type->name)), 'warning');
@@ -774,7 +787,9 @@ function asset_instance_delete_multiple(array $ids) {
  */
 function asset_instance_orphans(){
   $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'asset_instance');
+  $query->entityCondition('entity_type', 'asset_instance')
+    // Older than 6 hours
+    ->propertyCondition('changed', time() - 21600, '<');
   $results = $query->execute();
   $orphans = array();
   if(!empty($results['asset_instance'])){

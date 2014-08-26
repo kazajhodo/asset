@@ -8,11 +8,12 @@ function _asset_preprocess_entity(&$vars) {
   $asset = $vars['asset'];
   $instance = $asset->instance;
   $key = 'asset-' . $asset->id . '-' . $asset->instance->id;
+  $vars['classes_array'][] = drupal_html_class('asset-' . $vars['view_mode']);
   $vars['classes_array'][] = $key;
   // If view mode is asset, we need to process it through the enabled widgets.
-  if(!empty($asset->instance->id) && in_array($vars['view_mode'], array('asset','asset_preview'))){
+  if(in_array($vars['view_mode'], array('asset'))){
     foreach($instance->widgets as $widget_id => $widget){
-      if($vars['view_mode'] == 'asset_preview'){
+      if(!empty($asset->asset_preview)){
         $widget->instanceRenderPreview($vars);
       }
       else{
@@ -20,6 +21,20 @@ function _asset_preprocess_entity(&$vars) {
       }
     }
   }
+  // If view mode is NOT asset, we still need to run it through global widgets.
+  else{
+    foreach($instance->widgets as $widget_id => $widget){
+      if(!$widget->getGlobal()) continue;
+      if(!empty($asset->asset_preview)){
+        $widget->instanceRenderPreview($vars);
+      }
+      else{
+        $widget->instanceRender($vars);
+      }
+    }
+  }
+  $vars['prefix'] = isset($vars['prefix']) ? implode($vars['prefix'],'') : '';
+  $vars['suffix'] = isset($vars['suffix']) ? implode($vars['suffix'],'') : '';
 
   if(isset($vars['wrapper_styles'])){
     $style = ".$key{";
@@ -40,7 +55,7 @@ function _asset_preprocess_entity(&$vars) {
   }
 
   // Preview mode which uses instanceRenderPreview().
-  if($vars['view_mode'] == 'asset_preview'){
+  if(!empty($asset->asset_preview)){
     // Add data attributes for use elsewhere.
     $vars['attributes_array']['data-aid'] = $asset->id;
     $vars['attributes_array']['data-type'] = $asset->type;

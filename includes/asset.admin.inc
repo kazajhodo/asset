@@ -322,8 +322,12 @@ function asset_edit_form_validate($form, &$form_state) {
  * @todo remove hard-coded link
  */
 function asset_edit_form_submit($form, &$form_state) {
-  $values = $form_state['values'];
+  $values = &$form_state['values'];
   $asset = (object) $form_state['asset'];
+  if(!empty($values['instance_form']['status'])){
+    $instance = $asset->instance;
+    $instance->widgetFieldsSubmit($values['instance_form']['data']);
+  }
   $asset = entity_ui_controller('asset')->entityFormSubmitBuildEntity($form, $form_state);
   $asset->save();
   $form_state['redirect'] = 'asset/' . $asset->id;

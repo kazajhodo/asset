@@ -3,6 +3,9 @@
   background:#f0f0f0;
   padding:20px;
   border-radius:5px;
+  color:#656565;
+  text-shadow:none;
+  text-align:left;
 }
 
 .asset-placeholder-hide{

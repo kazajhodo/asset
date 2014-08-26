@@ -68,8 +68,8 @@ class assetWidgetLink extends assetWidget {
         $element['#attached']['js'][] = $insert_plugin['javascript'];
         $element['#attached']['js'][] = $field_js;
 
-        $button_text = !empty($instance['settings']['linkit']['button_text']) ? $instance['settings']['linkit']['button_text'] : t('Search');
-        $element['#suffix'] = '<a style="margin-top:-14px; margin-bottom:20px;" class="btn btn-info btn-sm btn-block linkit-field-button linkit-field-' . $field_id . '" href="#"><i class="fa fa-search"></i> ' . $button_text . ' Local Content</a>';
+        $button_text = !empty($instance['settings']['linkit']['button_text']) ? $instance['settings']['linkit']['button_text'] : t('Search Local Content');
+        $element['#field_suffix'] = '<a class="button tiny linkit-field-button linkit-field-' . $field_id . '" href="#"><i class="fa fa-search"></i> '.$button_text.'</a>';
       }
     }
 

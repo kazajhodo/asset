@@ -134,6 +134,12 @@ function asset_schema() {
         'not null' => FALSE,
         'default' => NULL,
       ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the instance was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'data' => array(
         'type' => 'text',
         'not null' => FALSE,

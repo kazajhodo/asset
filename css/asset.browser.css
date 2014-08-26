@@ -11,6 +11,7 @@
 .asset-browser .view-content{
   margin-left:-6px;
   margin-right:-6px;
+  text-align: center;
 }
 
 .asset-browser .views-row{

@@ -1,6 +1,6 @@
 (function($) {
 
-Drupal.behaviors.asset_widget_alignment = {
+Drupal.behaviors.asset_widget_display = {
   attach: function (context, settings) {
     var self = this;
     $('body').once('asset-full').each(function(){
@@ -16,8 +16,9 @@ Drupal.behaviors.asset_widget_alignment = {
   },
 
   align: function ($element) {
-    $element.css({marginLeft:'auto',marginRight:'auto'});
+    $element.css({marginLeft:'',marginRight:''});
     var maxWidth = $element.width();
+    $element.css({marginLeft:'auto',marginRight:'auto'});
     $('.asset-reset', $element).each(function(){
       $(this).css({maxWidth:maxWidth, marginLeft:'auto', marginRight:'auto'});
     });

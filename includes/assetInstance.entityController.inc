@@ -59,6 +59,18 @@ class AssetInstanceController extends EntityAPIController {
    *   Optionally a DatabaseTransaction object to use. Allows overrides to pass
    *   in their transaction object.
    */
+  public function save($entity, DatabaseTransaction $transaction = NULL) {
+    $entity->changed = time();
+    return parent::save($entity, $transaction);
+  }
+
+  /**
+   * Implements EntityAPIControllerInterface.
+   *
+   * @param $transaction
+   *   Optionally a DatabaseTransaction object to use. Allows overrides to pass
+   *   in their transaction object.
+   */
   public function delete($ids, DatabaseTransaction $transaction = NULL) {
     parent::delete($ids, $transaction);
     // When deleting an asset, also delete instances assigned to it.

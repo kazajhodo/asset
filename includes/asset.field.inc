@@ -1,28 +1,5 @@
 <?php
 
-// /**
-//  * Implements hook_element_info_alter().
-//  */
-// function asset_element_info_alter(&$types) {
-//   foreach(asset_allowed_elements() as $element){
-//     if(isset($types[$element])){
-//       // $types[$element]['#process'][] = 'asset_process_widget';
-//       $types[$element]['#process'][] = 'asset_validate_widget';
-//     }
-//   }
-// }
-
-// /**
-//  * Validate callback on asset allowed fields.
-//  */
-// function asset_validate_widget($element, &$form_state, $form){
-//   if(!empty($form_state['process_input'])){
-//     // dsm($element);
-//     // dsm($form_state);
-//   }
-//   return $element;
-// }
-
 /**
  * Implements hook_field_delete_field().
  */
@@ -97,19 +74,14 @@ function asset_preprocess_field(&$vars) {
             $data[$key] = $info;
           }
         }
-        // $data['name'] = $asset_types[$asset_type]->name;
-        // $data['plural'] = $asset_types[$asset_type]->plural;
-        // $data['public'] = $asset_types[$asset_type]->public;
-        // if(!empty($asset_types[$asset_type]->data)) $data += $asset_types[$asset_type]->data;
       }
       $js['asset']['fields'][$entity_type][$field['field_name']] = $settings;
       drupal_add_js($js, 'setting');
     }
     if(!empty($instance['settings']['asset']['status'])){
+      $preview = !empty($entity->asset_preview);
       foreach($vars['items'] as &$data){
-        // Asset is enabled on this field
-        $view_mode = !empty($vars['element']['#asset_view_mode']) ? $vars['element']['#asset_view_mode'] : $vars['element']['#view_mode'];
-        $data['#markup'] = asset_token_replace($data['#markup'], $allowed_types, $view_mode);
+        $data['#markup'] = asset_token_replace($data['#markup'], $allowed_types, 'asset', $preview);
       }
     }
   }
@@ -121,7 +93,7 @@ function asset_preprocess_field(&$vars) {
  * @param $allowed_types
  *   An array of allowed asset types. If empty, all types will be allowed.
  */
-function asset_token_replace($text, $allowed_types = array(), $view_mode = 'asset'){
+function asset_token_replace($text, $allowed_types = array(), $view_mode = 'default', $preview = FALSE){
   $assets = asset_token_find($text, TRUE);
   foreach($assets as $token => $info){
     $view = '';
@@ -130,8 +102,7 @@ function asset_token_replace($text, $allowed_types = array(), $view_mode = 'asse
         $view = '';
       }
       else{
-        $view_mode = $view_mode == 'full' ? 'asset' : $view_mode;
-        $view = asset_render($info['asset'], $view_mode);
+        $view = asset_render($info['asset'], $view_mode, $preview);
         $view = drupal_render($view);
       }
     }

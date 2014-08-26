@@ -60,6 +60,10 @@ abstract class assetWidget implements assetWidgetInterface {
   // Getters
   //////////////////////////////////////////////////////////////////////////////
 
+  public function getGlobal(){
+    return !empty($this->plugin['global']);
+  }
+
   public function getId(){
     return $this->getPluginValue('name');
   }
@@ -112,7 +116,11 @@ abstract class assetWidget implements assetWidgetInterface {
 
   public function instanceForm() {}
 
-  public function instanceFormValidate() {}
+  public function viewMode(&$view_mode) {}
+
+  public function instanceFormValidate(&$values) {}
+
+  public function instanceFormSubmit(&$values) {}
 
   public function instanceRender(&$vars) {}
 

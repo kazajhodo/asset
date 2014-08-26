@@ -66,6 +66,7 @@ function asset_instance_edit_form($form, &$form_state, $asset, $instance) {
   // We append the validate handler to #validate in case a form callback_wrapper
   // is used to add validate handlers earlier.
   $form['#validate'][] = 'asset_instance_edit_form_validate';
+  $form['#submit'][] = 'asset_instance_edit_form_submit';
   return $form;
 }
 
@@ -82,9 +83,10 @@ function asset_instance_edit_form_validate($form, &$form_state) {
  * Form API submit callback for the type form.
  */
 function asset_instance_edit_form_submit($form, &$form_state) {
-  $values = $form_state['values'];
+  $values = &$form_state['values'];
   $asset = $form_state['asset'];
   $instance = $form_state['asset_instance'];
+  $instance->widgetFieldsSubmit($values['data']);
   $instance->data = $values['data'];
   $instance->save();
   $form_state['asset_instance'] = $instance;
