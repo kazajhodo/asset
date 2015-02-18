@@ -18,6 +18,14 @@
   text-shadow:0 1px 2px rgba(0,0,0,.4);
 }
 
+.asset-color-light a {
+  color: #ffb08f;
+}
+
+.asset-color-light a:hover {
+  color: #fff;
+}
+
 .asset-hero{
   font-size:140%;
 }
