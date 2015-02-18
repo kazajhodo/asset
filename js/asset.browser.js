@@ -3,7 +3,8 @@
 Drupal.behaviors.asset_browser = {
   attach: function (context, settings) {
     var self = this;
-    $('.asset-inline-entity-browser .asset-select', context).once().click( self.assetSelect );
+    // context is not used in this selector as it breaks paging
+    $('.asset-inline-entity-browser .asset-select').once().click( self.assetSelect );
   },
 
   assetSelect: function ( e ) {
