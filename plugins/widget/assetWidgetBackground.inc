@@ -68,7 +68,7 @@ class assetWidgetBackground extends assetWidget {
       '#title' => t('Position'),
       '#description' => t('The position of the background image.'),
       '#type' => 'select',
-      '#options' => array('left top','left center','left bottom','right top','right center','right bottom','center top','center center','center bottom'),
+      '#options' => drupal_map_assoc(array('left top','left center','left bottom','right top','right center','right bottom','center top','center center','center bottom')),
       '#default_value' => isset($values['position']) ? $values['position'] : '',
     );
 
@@ -76,7 +76,7 @@ class assetWidgetBackground extends assetWidget {
       '#title' => t('Repeat'),
       '#description' => t('The repeat of the background image.'),
       '#type' => 'select',
-      '#options' => array('no-repeat','repeat','repeat-x','repeat-y'),
+      '#options' => drupal_map_assoc(array('no-repeat','repeat','repeat-x','repeat-y')),
       '#default_value' => isset($values['repeat']) ? $values['repeat'] : '',
     );
 
@@ -84,7 +84,7 @@ class assetWidgetBackground extends assetWidget {
       '#title' => t('Size'),
       '#description' => t('The size of the background image.'),
       '#type' => 'select',
-      '#options' => array('auto','cover','contain'),
+      '#options' => drupal_map_assoc(array('auto','cover','contain')),
       '#default_value' => isset($values['size']) ? $values['size'] : '',
     );
 
