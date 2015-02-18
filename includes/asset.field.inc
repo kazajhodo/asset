@@ -94,6 +94,10 @@ function asset_preprocess_field(&$vars) {
  *   An array of allowed asset types. If empty, all types will be allowed.
  */
 function asset_token_replace($text, $allowed_types = array(), $view_mode = 'default', $preview = FALSE){
+
+  // Regex to replace <p> tags that wrap assets.
+  $text = preg_replace('/(<p>(\[.*\](\s)*)<\/p>)/i', '$2', $text);
+
   $assets = asset_token_find($text, TRUE);
   foreach($assets as $token => $info){
     $view = '';
