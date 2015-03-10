@@ -8,6 +8,7 @@ dependencies[] = ctools
 dependencies[] = entity
 dependencies[] = views
 
+files[] = plugins/widget/assetWidget.inc
 files[] = includes/asset.admin.inc
 files[] = includes/asset.entity.inc
 files[] = includes/asset.entityController.inc
@@ -28,4 +29,3 @@ files[] = views/asset_handler_select_field.inc
 files[] = views/asset_handler_type_field.inc
 files[] = views/asset_handler_type_filter.inc
 files[] = views/asset_handler_type_argument.inc
-files[] = plugins/widget/assetWidget.inc

@@ -5,6 +5,7 @@ require_once dirname(__FILE__) . '/includes/asset.fieldAdmin.inc';
 require_once dirname(__FILE__) . '/includes/asset.fieldWidget.inc';
 require_once dirname(__FILE__) . '/includes/asset.viewModes.inc';
 require_once dirname(__FILE__) . '/includes/asset.cron.inc';
+require_once dirname(__FILE__) . '/plugins/widget/assetWidget.inc';
 
 function asset_init(){
   // Make sure widget classes are available on each request.
