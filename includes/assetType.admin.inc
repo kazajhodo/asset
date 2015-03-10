@@ -147,7 +147,7 @@ class AssetTypeUIController extends EntityDefaultUIController {
   }
 
   protected function icon(&$title, &$options = array()){
-    if(variable_get('admin_theme') == 'boushh'){
+    if(function_exists('fett_icon_link')){
       fett_icon_link($title, $options, TRUE, TRUE);
     }
   }
