@@ -70,14 +70,15 @@ class assetWidgetImageStyle extends assetWidget {
     $settings = $this->getFormSettings();
     $values = $this->getValues();
 
-    $options = array('' => '- None -');
+    $options = array('' => 'Default');
     foreach($settings as $id => $label){
-      $options[$id] = !empty($label) ? t($label) : $id;
+      $options[$id] = !empty($label) ? $label : $id;
     }
     $form['image_style'] = array(
-      '#type' => 'select',
+      '#type' => 'radios',
       '#title' => t('Image Style'),
       '#options' => $options,
+      '#attributes' => array('class' => array('explode')),
       '#default_value' => isset($values['image_style']) ? $values['image_style'] : '',
     );
     return $form;

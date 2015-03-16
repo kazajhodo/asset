@@ -17,6 +17,11 @@ function asset_field_formatter_info() {
         'view_mode' => 'asset',
       ),
     ),
+    'asset_text_trimmed' => array(
+      'label' => t('ASSET | Trimmed'),
+      'field types' => array('text', 'text_long', 'text_with_summary'),
+      'settings' => array('trim_length' => 600, 'asset_remove' => 1),
+    ),
   );
 }
 
@@ -26,23 +31,33 @@ function asset_field_formatter_info() {
 function asset_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
+  $element = array();
 
-  if ($display['type'] == 'asset_entity_view') {
-    $entity_info = entity_get_info($field['settings']['target_type']);
-    $options = asset_view_modes();
-    if (!empty($entity_info['view modes'])) {
-      foreach ($entity_info['view modes'] as $view_mode => $view_mode_settings) {
-        $options[$view_mode] = $view_mode_settings['label'];
+  switch($display['type']){
+    case 'asset_entity_view':
+      $entity_info = entity_get_info($field['settings']['target_type']);
+      $options = asset_view_modes();
+      if (!empty($entity_info['view modes'])) {
+        foreach ($entity_info['view modes'] as $view_mode => $view_mode_settings) {
+          $options[$view_mode] = $view_mode_settings['label'];
+        }
       }
-    }
-
-    $element['view_mode'] = array(
-      '#type' => 'select',
-      '#options' => $options,
-      '#title' => t('View mode'),
-      '#default_value' => $settings['view_mode'],
-      '#access' => count($options) > 1,
-    );
+      $element['view_mode'] = array(
+        '#type' => 'select',
+        '#options' => $options,
+        '#title' => t('View mode'),
+        '#default_value' => $settings['view_mode'],
+        '#access' => count($options) > 1,
+      );
+      break;
+    case 'asset_text_trimmed':
+      $element = text_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
+      $element['asset_remove'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Remove assets from output'),
+        '#default_value' => $settings['asset_remove'] ? 1 : 0,
+      );
+      break;
   }
 
   return $element;
@@ -67,6 +82,13 @@ function asset_field_formatter_settings_summary($field, $instance, $view_mode) {
     $summary[] = t('Rendered as @mode', array('@mode' => $view_mode_label));
   }
 
+  if ($display['type'] == 'asset_text_trimmed') {
+    $summary[] = text_field_formatter_settings_summary($field, $instance, $view_mode);
+    if(!empty($settings['asset_remove'])){
+      $summary[] = '<br>Strip assets';
+    }
+  }
+
   return implode('<br />', $summary);
 }
 
@@ -74,6 +96,8 @@ function asset_field_formatter_settings_summary($field, $instance, $view_mode) {
  * Implements hook_field_formatter_prepare_view().
  */
 function asset_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  if($field['type'] !== 'entityreference') return;
+
   $target_ids = array();
 
   // Collect every possible entity attached to any of the entities.
@@ -136,18 +160,18 @@ function asset_field_formatter_prepare_view($entity_type, $entities, $field, $in
  * Implements hook_field_formatter_view().
  */
 function asset_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
-  $result = array();
+  $element = array();
   $settings = $display['settings'];
-
-  // Rebuild the items list to contain only those with access.
-  foreach ($items as $key => $item) {
-    if (empty($item['access'])) {
-      unset($items[$key]);
-    }
-  }
 
   switch ($display['type']) {
     case 'asset_entity_view':
+
+      // Rebuild the items list to contain only those with access.
+      foreach ($items as $key => $item) {
+        if (empty($item['access'])) {
+          unset($items[$key]);
+        }
+      }
       foreach ($items as $delta => $item) {
         // Protect ourselves from recursive rendering.
         static $depth = 0;
@@ -158,12 +182,22 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
 
         $entity = clone $item['entity'];
         unset($entity->content);
-        $result[$delta] = entity_view($field['settings']['target_type'], array($item['target_id'] => $entity), $settings['view_mode'], $langcode, FALSE);
+        $element[$delta] = entity_view($field['settings']['target_type'], array($item['target_id'] => $entity), $settings['view_mode'], $langcode, FALSE);
 
         $depth = 0;
       }
       break;
+    case 'asset_text_trimmed':
+      foreach ($items as $delta => $item) {
+        $output = _text_sanitize($instance, $langcode, $item, 'value');
+        if ($display['settings']['asset_remove']) {
+          $output = asset_token_remove($output);
+        }
+        $output = text_summary($output, $instance['settings']['text_processing'] ? $item['format'] : NULL, $display['settings']['trim_length']);
+        $element[$delta] = array('#markup' => $output);
+      }
+      break;
   }
 
-  return $result;
+  return $element;
 }

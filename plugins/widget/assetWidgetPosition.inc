@@ -21,15 +21,28 @@ class assetWidgetPosition extends assetWidget {
     $settings = $this->getFormSettings();
     $values = $this->getValues();
 
+    // $form['position'] = array(
+    //   '#type' => 'select',
+    //   '#title' => t('Position'),
+    //   '#options' => array(
+    //     '' => t('- None -'),
+    //     'center' => t('Center'),
+    //     'left' => t('Left'),
+    //     'right' => t('Right'),
+    //   ),
+    //   '#default_value' => isset($values['position']) ? $values['position'] : 'center',
+    // );
+
     $form['position'] = array(
-      '#type' => 'select',
+      '#type' => 'radios',
       '#title' => t('Position'),
       '#options' => array(
-        '' => t('- None -'),
-        'center' => t('Center'),
-        'left' => t('Left'),
-        'right' => t('Right'),
+        '' => t('Default'),
+        'left' => '<i class="fa fa-align-left"></i>',
+        'center' => '<i class="fa fa-align-center"></i>',
+        'right' => '<i class="fa fa-align-right"></i>',
       ),
+      '#attributes' => array('class' => array('explode')),
       '#default_value' => isset($values['position']) ? $values['position'] : 'center',
     );
 
