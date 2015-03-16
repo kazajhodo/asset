@@ -47,7 +47,7 @@ class AssetUIController extends EntityDefaultUIController {
         'page callback' => 'asset_form_wrapper',
         'page arguments' => array($type->type),
         'access callback' => 'asset_access',
-        'access arguments' => array('edit', $type),
+        'access arguments' => array('edit', $type->type),
         'file' => 'asset.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
       );
@@ -233,9 +233,10 @@ function asset_edit_form($form, &$form_state, $asset) {
 
   $form['instance_form'] = array(
     '#weight' => 200,
-    '#access' => FALSE,
+    '#access' => $asset_type->public,
     '#tree' => TRUE,
   );
+
   $form['instance_form']['status'] = array(
     '#type'          => 'checkbox',
     '#title'         => t('Set default options'),
@@ -260,7 +261,6 @@ function asset_edit_form($form, &$form_state, $asset) {
   }
 
   if($instance_fields = $instance->widgetFields()){
-    $form['instance_form']['#access'] = TRUE;
     $form['instance_form']['data']['#states'] = array(
       'visible' => array(
         ':input[name="instance_form[status]"]' => array('checked' => TRUE),

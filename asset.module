@@ -344,6 +344,12 @@ function asset_access($op, $asset = NULL, $account = NULL) {
       return TRUE;
     }
   }
+  if (isset($asset) && is_string($asset) && $type_name = $asset) {
+    $op = ($op == 'view') ? 'view' : 'edit';
+    if (user_access("$op any $type_name asset", $account)) {
+      return TRUE;
+    }
+  }
   return FALSE;
 }
 
@@ -401,18 +407,6 @@ function asset_preprocess_entity(&$vars) {
   module_load_include('inc', 'asset', 'theme/asset.theme');
   drupal_alter('preprocess_asset', $vars);
   _asset_preprocess_entity($vars);
-}
-
-function asset_entity_view_mode_alter(&$view_mode, $context){
-  // if ($context['entity_type'] == 'asset' && $view_mode !== 'full') {
-  //   $asset = $context['entity'];
-  //   // Allow widgets to change the view mode.
-  //   if(!empty($asset->instance->id)){
-  //     foreach($asset->instance->widgets as $widget_id => $widget){
-  //       $widget->viewMode($view_mode);
-  //     }
-  //   }
-  // }
 }
 
 /**
@@ -1099,6 +1093,26 @@ function asset_get_handler($type, $name) {
   return $object_cache[$name];
 }
 
+/**
+ * Implements hook_form_alter().
+ */
+function asset_form_views_exposed_form_alter(&$form, &$form_state) {
+  // ------------------------------------------------------------
+  // Add an own reset button to all views exposed forms. The reason behind is,
+  // that the default Drupal reset button doesn't play nice with AJAX
+  // and jumps back to the front page because of URL problems. So it's unusable for us.
+  //
+  // Add class to make it better selectable in JS and CSS
+  $form['submit']['#attributes'] = array('class' => array('my-views-filter-submit'));
+  $submit_btn_id = $form['submit']['#id'];
+  if (!empty($submit_btn_id) && !empty($form['reset'])) {
+    // Add own reset button
+    $form['submit']['#suffix'] = '<button onclick="javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;" class="form-submit ico-remove form-reset my-views-filter-reset">' . t('Reset') . '</button>';
+    // Remove the original RESET button.
+    unset($form['reset']);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Tools
 ////////////////////////////////////////////////////////////////////////////////
@@ -1121,4 +1135,11 @@ function asset_field_info_instance($entity_type, $field_name, $bundle_name) {
     $instance['settings']['asset']['settings'] = variable_get('asset', array());
   }
   return $instance;
+}
+
+/**
+ * Load JS asset converter
+ */
+function asset_token_tool_load(){
+  drupal_add_js(drupal_get_path('module','asset') . '/js/asset.token.js');
 }

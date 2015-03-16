@@ -105,7 +105,7 @@ function _asset_preprocess_entity(&$vars) {
             '#weight' => 100,
           );
         }
-        $vars['content']['instances'][$instance_id]['entity'] = asset_render($asset_with_instance);
+        $vars['content']['instances'][$instance_id]['entity'] = asset_render($asset_with_instance, 'asset');
         $vars['content']['instances'][$instance_id]['entity']['#prefix'] = '<div class="asset-instance-render">';
         $vars['content']['instances'][$instance_id]['entity']['#suffix'] = '</div>';
       }
