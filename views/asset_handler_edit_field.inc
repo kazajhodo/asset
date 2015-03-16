@@ -7,7 +7,7 @@
  */
 
 
-class asset_handler_edit_link_field extends asset_handler_link_field {
+class asset_handler_edit_field extends asset_handler_link_field {
   function construct() {
     parent::construct();
     $this->additional_fields['type'] = 'type';

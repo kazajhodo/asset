@@ -7,7 +7,7 @@
  */
 
 
-class asset_handler_delete_link_field extends asset_handler_link_field {
+class asset_handler_delete_field extends asset_handler_link_field {
   function construct() {
     parent::construct();
     $this->additional_fields['type'] = 'type';
