@@ -116,6 +116,16 @@ function asset_token_replace($text, $allowed_types = array(), $view_mode = 'defa
 }
 
 /**
+ * Remove all tokens from text.
+ */
+function asset_token_remove($text){
+  if (!empty($text)) {
+    $pattern = '/(\[asset-[0-9]+(-[0-9]+)?\])/i';
+    return preg_replace($pattern, '', $text);
+  }
+}
+
+/**
  * Get all asset token matches
  *
  * @param  $assets_load
