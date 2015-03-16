@@ -56,6 +56,14 @@ function asset_views_data_alter(&$data) {
     ),
   );
 
+  $data['views']['asset_creation'] = array(
+    'title' => t('Asset Creation'),
+    'help' => t('Shows asset creation links.'),
+    'area' => array(
+      'handler' => 'asset_handler_creation_field',
+    ),
+  );
+
   $data['asset']['created']['field']['handler'] = 'views_handler_field_date';
   $data['asset']['changed']['field']['handler'] = 'views_handler_field_date';
 
@@ -96,6 +104,21 @@ function asset_views_data_alter(&$data) {
     'field' => array(
       'handler' => 'asset_handler_type_field',
       'click sortable' => TRUE
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_plugins().
+ */
+function asset_views_plugins() {
+  return array(
+    'module' => 'views', // This just tells our themes are elsewhere.
+    'argument validator' => array(
+      'asset' => array(
+        'title' => t('Asset'),
+        'handler' => 'asset_plugin_argument_validate',
+      ),
     ),
   );
 }
