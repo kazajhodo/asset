@@ -7,6 +7,7 @@
 function _asset_preprocess_entity(&$vars) {
   $asset = $vars['asset'];
   $instance = $asset->instance;
+  $asset_type = asset_type_load($asset->type);
   $key = 'asset-' . $asset->id . '-' . $asset->instance->id;
   $vars['classes_array'][] = drupal_html_class('asset-' . $vars['view_mode']);
   $vars['classes_array'][] = $key;
@@ -67,13 +68,15 @@ function _asset_preprocess_entity(&$vars) {
   // Full mode view.
   if($vars['view_mode'] === 'full'){
     $vars['content']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
-    $usage = asset_usage($asset->id);
-    $vars['content']['usage'] = array(
-      '#theme' => 'asset_usage',
-      '#usage' => $usage,
-      '#weight' => 100,
-    );
-    if($instances = asset_load_all_instances($asset->id)){
+    if(!empty($asset_type->data['usage_info'])){
+      $usage = asset_usage($asset->id);
+      $vars['content']['usage'] = array(
+        '#theme' => 'asset_usage',
+        '#usage' => $usage,
+        '#weight' => 100,
+      );
+    }
+    if(!empty($asset_type->data['instance_info']) && $instances = asset_load_all_instances($asset->id)){
       $vars['content']['instances'] = array(
         '#type' => 'fieldset',
         '#title' => t('Available Instances'),

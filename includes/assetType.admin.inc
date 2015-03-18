@@ -203,6 +203,20 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
     '#default_value' => empty($asset_type->data['auto_title']) ? 0 : $asset_type->data['auto_title'],
   );
 
+  $form['data']['usage_info'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show usage info'),
+    '#description' => t('Show asset usage information on the asset view page and delete confirmation page.'),
+    '#default_value' => empty($asset_type->data['usage_info']) ? 0 : $asset_type->data['usage_info'],
+  );
+
+  $form['data']['instance_info'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show instance info'),
+    '#description' => t('Show asset instance information on the asset view page.'),
+    '#default_value' => empty($asset_type->data['instance_info']) ? 0 : $asset_type->data['instance_info'],
+  );
+
   $form['data']['purge'] = array(
     '#type' => 'checkbox',
     '#title' => t('Remove when not used'),
