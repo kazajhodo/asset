@@ -566,21 +566,23 @@ function asset_orphans(){
       $purge_types[] = $type->type;
     }
   }
-  $query = db_select('asset', 'a');
-  $query->leftJoin('asset_usage', 'u', 'u.asset_id = a.id');
-  $results = $query->fields('a')
-    ->condition('a.type', $purge_types, 'IN')
-    // Older than 6 hours
-    ->condition('a.changed', time() - 21600, '<')
-    ->isNull('u.entity_id')
-    ->execute()
-    ->fetchAll();
   $orphans = array();
-  foreach($results as $orphan){
-    $usage = asset_usage($orphan->id);
-    // Check usage for suspected assets.
-    if(empty($usage['total'])){
-      $orphans[] = $orphan->id;
+  if(!empty($purge_types)){
+    $query = db_select('asset', 'a');
+    $query->leftJoin('asset_usage', 'u', 'u.asset_id = a.id');
+    $results = $query->fields('a')
+      ->condition('a.type', $purge_types, 'IN')
+      // Older than 6 hours
+      ->condition('a.changed', time() - 21600, '<')
+      ->isNull('u.entity_id')
+      ->execute()
+      ->fetchAll();
+    foreach($results as $orphan){
+      $usage = asset_usage($orphan->id);
+      // Check usage for suspected assets.
+      if(empty($usage['total'])){
+        $orphans[] = $orphan->id;
+      }
     }
   }
   return $orphans;
