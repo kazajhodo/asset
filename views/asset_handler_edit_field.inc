@@ -26,6 +26,6 @@ class asset_handler_edit_field extends asset_handler_link_field {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('edit');
     $id = $values->{$this->aliases['id']};
 
-    return l('<i class="fa fa-edit"></i>' . $text, 'admin/content/assets/asset/' . $id . '/edit', array('html'=>true));
+    return l('<i class="fa fa-edit"></i>' . $text, 'admin/content/assets/' . $id . '/edit', array('html'=>true));
   }
 }

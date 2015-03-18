@@ -26,6 +26,6 @@ class asset_handler_delete_field extends asset_handler_link_field {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('delete');
     $id = $values->{$this->aliases['id']};
 
-    return l($text, 'admin/content/assets/asset/' . $id . '/delete');
+    return l('<i class="fa fa-trash-o"></i>' . $text, 'admin/content/assets/' . $id . '/delete', array('html'=>true));
   }
 }

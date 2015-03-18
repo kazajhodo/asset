@@ -53,31 +53,31 @@ class AssetUIController extends EntityDefaultUIController {
       );
     }
 
-    $items[$this->path . '/manage/' . $wildcard] = array(
+    $items[$this->path . '/' . $wildcard] = array(
       'title callback' => 'asset_form_title',
-      'title arguments' => array($id_count + 1),
+      'title arguments' => array($id_count),
       'page callback' => 'asset_form_wrapper',
-      'page arguments' => array($id_count + 1),
+      'page arguments' => array($id_count),
       'access callback' => 'asset_access',
-      'access arguments' => array('edit', $id_count + 1),
+      'access arguments' => array('edit', $id_count),
       'weight' => 0,
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
       'file' => 'asset.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
-    $items[$this->path . '/manage/' . $wildcard . '/edit'] = array(
+    $items[$this->path . '/' . $wildcard . '/edit'] = array(
       'title' => 'Edit',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => 0,
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     );
 
-    $items[$this->path . '/manage/' . $wildcard . '/delete'] = array(
+    $items[$this->path . '/' . $wildcard . '/delete'] = array(
       'title' => 'Delete',
       'page callback' => 'drupal_get_form',
-      'page arguments' => array('asset_delete_form', $id_count + 1, $id_count + 2),
+      'page arguments' => array('asset_delete_form', $id_count, $id_count + 1),
       'access callback' => 'asset_access',
-      'access arguments' => array('delete', $id_count + 1),
+      'access arguments' => array('delete', $id_count),
       'type' => MENU_LOCAL_TASK,
       'context' => MENU_CONTEXT_INLINE,
       'weight' => 10,
@@ -85,14 +85,14 @@ class AssetUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
-    $items[$this->path . '/manage/' . $wildcard . '/instance'] = array(
+    $items[$this->path . '/' . $wildcard . '/instance'] = array(
       'title' => 'Add Instance',
       'title callback' => 'asset_instance_create_form_title',
-      'title arguments' => array($id_count + 1),
+      'title arguments' => array($id_count),
       'page callback' => 'asset_instance_form_wrapper',
-      'page arguments' => array($id_count + 1, $id_count + 2),
+      'page arguments' => array($id_count, $id_count + 1),
       'access callback' => 'asset_access',
-      'access arguments' => array('instance', $id_count + 1),
+      'access arguments' => array('instance', $id_count),
       'type' => MENU_LOCAL_TASK,
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
       'weight' => -10,
@@ -100,33 +100,33 @@ class AssetUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
-    $items[$this->path . '/manage/' . $wildcard . '/instance/%asset_instance'] = array(
+    $items[$this->path . '/' . $wildcard . '/instance/%asset_instance'] = array(
       'title callback' => 'asset_instance_form_title',
-      'title arguments' => array($id_count + 1, $id_count + 3),
+      'title arguments' => array($id_count, $id_count + 2),
       'page callback' => 'asset_instance_form_wrapper',
-      'page arguments' => array($id_count + 1, $id_count + 3),
+      'page arguments' => array($id_count, $id_count + 2),
       'access callback' => 'asset_instance_access',
-      'access arguments' => array('edit', $id_count + 3),
+      'access arguments' => array('edit', $id_count + 2),
       'weight' => 0,
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
       'file' => 'assetInstance.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
-    $items[$this->path . '/manage/' . $wildcard . '/instance/%asset_instance/edit'] = array(
+    $items[$this->path . '/' . $wildcard . '/instance/%asset_instance/edit'] = array(
       'title' => 'Edit',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10,
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     );
 
-    $items[$this->path . '/manage/' . $wildcard . '/instance/%asset_instance/delete'] = array(
+    $items[$this->path . '/' . $wildcard . '/instance/%asset_instance/delete'] = array(
       'title' => 'Delete',
       'title callback' => 'asset_instance_form_title',
-      'title arguments' => array($id_count + 1, $id_count + 3, $id_count + 4),
+      'title arguments' => array($id_count, $id_count + 2, $id_count + 3),
       'page callback' => 'drupal_get_form',
-      'page arguments' => array('asset_instance_delete_form', $id_count + 1, $id_count + 3),
+      'page arguments' => array('asset_instance_delete_form', $id_count, $id_count + 2),
       'access callback' => 'asset_instance_access',
-      'access arguments' => array('delete', $id_count + 3),
+      'access arguments' => array('delete', $id_count + 2),
       'type' => MENU_LOCAL_TASK,
       'context' => MENU_CONTEXT_INLINE,
       'weight' => 0,
