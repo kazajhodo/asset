@@ -2,6 +2,7 @@ name = Asset
 description = Provides assets for various uses.
 package     = asset
 core = 7.x
+version = "7.x-1.0"
 
 dependencies[] = entity
 dependencies[] = views
