@@ -229,6 +229,7 @@ function asset_fett_icons_alter(&$icons){
   foreach (asset_get_types() as $type) {
     if(!empty($type->data['icon'])){
       $icons[$type->name] = $type->data['icon'];
+      $icons[$type->plural] = $type->data['icon'];
       $icons['Add ' . $type->name] = $type->data['icon'];
     }
   }
@@ -586,6 +587,39 @@ function asset_orphans(){
     }
   }
   return $orphans;
+}
+
+/**
+ * Get URL to an asset. We allow operational URLs to be overwritten on a
+ * per-asset-type basis. This helper will return the correct URL.
+ *
+ * @param $asset
+ *   The asset object or asset id
+ * @param $op
+ *   The operation to get the URL for. Options are list/view/edit/delete
+ */
+function asset_url($asset, $op = 'view'){
+  $asset_types = drupal_static(__FUNCTION__);
+  if (!isset($asset_types)) {
+    $asset_types = asset_get_types();
+  }
+  if(is_numeric($asset)){
+    $asset = asset_load($asset);
+  }
+  $defaults = array(
+    'list' => 'admin/content/assets',
+    'view' => 'asset/[asset:id]',
+    'edit' => 'admin/content/assets/[asset:id]/edit',
+    'delete' => 'admin/content/assets/[asset:id]/delete',
+  );
+  $url = isset($defaults[$op]) ? $defaults[$op] : $defaults['view'];
+  if(isset($asset_types[$asset->type]) && !empty($asset_types[$asset->type]->data['path'])){
+    if($op == 'list'){
+      return $asset_types[$asset->type]->data['path'];
+    }
+    $url = preg_replace('/^[^\[]+/', $asset_types[$asset->type]->data['path'] . '/', $url);
+  }
+  return token_replace($url, array('asset' => $asset));
 }
 
 

@@ -16,7 +16,8 @@ class asset_handler_ops_field extends views_handler_field {
   }
 
   function render($values) {
-    $links = menu_contextual_links('asset', 'admin/content/assets', array($this->get_value($values, 'id')));
+    $id = $this->get_value($values, 'id');
+    $links = menu_contextual_links('asset', asset_url($id, 'list'), array($id));
     if (!empty($links)) {
       foreach($links as &$link){
         $link['query'] = drupal_get_destination();

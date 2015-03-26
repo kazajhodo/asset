@@ -40,20 +40,19 @@ class AssetUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
-    // Add menu items to add each different type of entity.
-    foreach (asset_get_types() as $type) {
-      $items[$this->path . '/add/' . $type->type] = array(
-        'title' => 'Add ' . $type->name,
-        'page callback' => 'asset_form_wrapper',
-        'page arguments' => array($type->type),
-        'access callback' => 'asset_access',
-        'access arguments' => array('edit', $type->type),
-        'file' => 'asset.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
-      );
-    }
+    $view_base = array(
+      'title' => 'View',
+      'title callback' => 'asset_page_title',
+      'title arguments' => array(1),
+      'page callback' => 'asset_page_view',
+      'page arguments' => array(1),
+      'access callback' => 'asset_access',
+      'access arguments' => array('view', 1),
+      'type' => MENU_CALLBACK,
+    );
 
-    $items[$this->path . '/' . $wildcard] = array(
+    $edit_base = array(
+      'title' => 'Edit',
       'title callback' => 'asset_form_title',
       'title arguments' => array($id_count),
       'page callback' => 'asset_form_wrapper',
@@ -65,6 +64,69 @@ class AssetUIController extends EntityDefaultUIController {
       'file' => 'asset.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
+
+    $delete_base = array(
+      'title' => 'Delete',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('asset_delete_form', $id_count, $id_count + 1),
+      'access callback' => 'asset_access',
+      'access arguments' => array('delete', $id_count),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+      'weight' => 10,
+      'file' => 'asset.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+    );
+
+    // Add menu items to add each different type of entity.
+    foreach (asset_get_types() as $type) {
+      $items[$this->path . '/add/' . $type->type] = array(
+        'title' => 'Add ' . $type->name,
+        'page callback' => 'asset_form_wrapper',
+        'page arguments' => array($type->type),
+        'access callback' => 'asset_access',
+        'access arguments' => array('edit', $type->type),
+        'file' => 'asset.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+      );
+      if(!empty($type->data['path'])){
+        $custom_id_count = count(explode('/', $type->data['path']));
+
+        // Custom View
+        $items[$type->data['path'] . '/' . $wildcard] = array(
+          'title arguments' => array($custom_id_count),
+          'page arguments' => array($custom_id_count),
+          'access arguments' => array('view', $custom_id_count),
+          'type' => MENU_NORMAL_ITEM,
+        ) + $view_base;
+        // Custom Edit
+        $items[$type->data['path'] . '/' . $wildcard . '/view'] = array(
+          'title' => 'View ' . $type->name,
+          'type' => MENU_DEFAULT_LOCAL_TASK,
+          'weight' => -10,
+        );
+        // Custom Delete
+        $items[$type->data['path'] . '/' . $wildcard . '/edit'] = array(
+          'title' => 'Edit ' . $type->name,
+          'title callback' => '',
+          'title arguments' => array($custom_id_count),
+          'page arguments' => array($custom_id_count),
+          'access arguments' => array('edit', $custom_id_count),
+          'type' => MENU_LOCAL_TASK,
+          'weight' => -5,
+        ) + $edit_base;
+
+        $items[$type->data['path'] . '/' . $wildcard . '/delete'] = array(
+          'title' => 'Delete ' . $type->name,
+          'page arguments' => array('asset_delete_form', $custom_id_count, $custom_id_count + 1),
+          'access arguments' => array('delete', $custom_id_count),
+          'weight' => 100,
+        ) + $delete_base;
+      }
+    }
+
+    $items[$this->path . '/' . $wildcard] = $edit_base;
+
     $items[$this->path . '/' . $wildcard . '/edit'] = array(
       'title' => 'Edit',
       'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -72,18 +134,7 @@ class AssetUIController extends EntityDefaultUIController {
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     );
 
-    $items[$this->path . '/' . $wildcard . '/delete'] = array(
-      'title' => 'Delete',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('asset_delete_form', $id_count, $id_count + 1),
-      'access callback' => 'asset_access',
-      'access arguments' => array('delete', $id_count),
-      'type' => MENU_LOCAL_TASK,
-      'context' => MENU_CONTEXT_INLINE,
-      'weight' => 10,
-      'file' => 'asset.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
-    );
+    $items[$this->path . '/' . $wildcard . '/delete'] = $delete_base;
 
     $items[$this->path . '/' . $wildcard . '/instance'] = array(
       'title' => 'Add Instance',
@@ -135,16 +186,7 @@ class AssetUIController extends EntityDefaultUIController {
     );
 
     // Menu item for viewing assets
-    $items['asset/' . $wildcard] = array(
-      //'title' => 'Title',
-      'title callback' => 'asset_page_title',
-      'title arguments' => array(1),
-      'page callback' => 'asset_page_view',
-      'page arguments' => array(1),
-      'access callback' => 'asset_access',
-      'access arguments' => array('view', 1),
-      'type' => MENU_CALLBACK,
-    );
+    $items['asset/' . $wildcard] = $view_base;
 
     return $items;
   }
@@ -171,7 +213,8 @@ class AssetUIController extends EntityDefaultUIController {
  * Title for management pages.
  */
 function asset_form_title(Asset $asset, $op = 'edit'){
-  return ucfirst($op) . ' ' . $asset->name;
+  $title = '<em>' . ucfirst($op) . '</em> ' . $asset->name;
+  return function_exists('fett_preprocess') ? $title : strip_tags($title);
 }
 
 /**
@@ -196,6 +239,10 @@ function asset_form_wrapper($asset) {
   if(!is_a($asset, 'Asset')){
     $asset = asset_create(array('type' => $asset));
   }
+  else{
+    drupal_set_title(asset_form_title($asset, 'edit'));
+  }
+
   // Add the breadcrumb for the form's location.
   asset_set_breadcrumb();
   return drupal_get_form('asset_edit_form', $asset);
@@ -343,27 +390,23 @@ function asset_edit_form_submit($form, &$form_state) {
  */
 function asset_delete_form($form, &$form_state, $asset) {
   $form_state['asset'] = $asset;
-  $usage = asset_usage($asset->id);
-
-    $vars['content']['usage'] = array(
-      '#theme' => 'asset_usage',
-      '#usage' => $usage,
-      '#weight' => 100,
-    );
 
   $form['#submit'][] = 'asset_delete_form_submit';
 
   $message = '<p>'.t('This action cannot be undone.').'</p>';
   if($usage = asset_usage($asset->id)){
-    $form['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
+    $asset_type = asset_type_load($asset->type);
+    if(!empty($asset_type->data['usage_info'])){
+      $form['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
 
-    $message = '<div class="alert-box alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset remove it from anywhere it is used.').'</div>';
+      $message = '<div class="alert-box alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset remove it from anywhere it is used.').'</div>';
 
-    $form['usage'] = array(
-      '#theme' => 'asset_usage',
-      '#usage' => $usage,
-      '#weight' => 1,
-    );
+      $form['usage'] = array(
+        '#theme' => 'asset_usage',
+        '#usage' => $usage,
+        '#weight' => 1,
+      );
+    }
   }
 
   $form = confirm_form($form,
@@ -374,6 +417,8 @@ function asset_delete_form($form, &$form_state, $asset) {
     t('Cancel'),
     'confirm'
   );
+
+  drupal_set_title(asset_form_title($asset, 'delete'));
 
   return $form;
 }

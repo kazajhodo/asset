@@ -196,6 +196,13 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
 
   $form['data']['#tree'] = TRUE;
 
+  $form['data']['path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Custom URL path'),
+    '#description' => t('Will change the view/edit/delete url for an asset. Example: media/image. Defaults to: !view !edit !delete.', array('!view' => '<code>VIEW asset/:asset</code>', '!edit' => '<code>EDIT admin/content/assets/:asset/edit</code>', '!delete' => '<code>DELETE admin/content/assets/:asset/edit</code>')),
+    '#default_value' => empty($asset_type->data['path']) ? '' : $asset_type->data['path'],
+  );
+
   $form['data']['auto_title'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide the title field'),
