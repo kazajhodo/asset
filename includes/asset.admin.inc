@@ -93,19 +93,18 @@ class AssetUIController extends EntityDefaultUIController {
         $custom_id_count = count(explode('/', $type->data['path']));
 
         // Custom View
-        $items[$type->data['path'] . '/' . $wildcard] = array(
-          'title arguments' => array($custom_id_count),
-          'page arguments' => array($custom_id_count),
-          'access arguments' => array('view', $custom_id_count),
-          'type' => MENU_NORMAL_ITEM,
-        ) + $view_base;
+        // $items[$type->data['path'] . '/' . $wildcard] = array(
+        //   'title arguments' => array($custom_id_count),
+        //   'page arguments' => array($custom_id_count),
+        //   'access arguments' => array('view', $custom_id_count),
+        //   'type' => MENU_NORMAL_ITEM,
+        // ) + $view_base;
+        // $items[$type->data['path'] . '/' . $wildcard . '/view'] = array(
+        //   'title' => 'View ' . $type->name,
+        //   'type' => MENU_DEFAULT_LOCAL_TASK,
+        //   'weight' => -10,
+        // );
         // Custom Edit
-        $items[$type->data['path'] . '/' . $wildcard . '/view'] = array(
-          'title' => 'View ' . $type->name,
-          'type' => MENU_DEFAULT_LOCAL_TASK,
-          'weight' => -10,
-        );
-        // Custom Delete
         $items[$type->data['path'] . '/' . $wildcard . '/edit'] = array(
           'title' => 'Edit ' . $type->name,
           'title callback' => '',
@@ -115,7 +114,7 @@ class AssetUIController extends EntityDefaultUIController {
           'type' => MENU_LOCAL_TASK,
           'weight' => -5,
         ) + $edit_base;
-
+        // Custom Delete
         $items[$type->data['path'] . '/' . $wildcard . '/delete'] = array(
           'title' => 'Delete ' . $type->name,
           'page arguments' => array('asset_delete_form', $custom_id_count, $custom_id_count + 1),
@@ -187,6 +186,11 @@ class AssetUIController extends EntityDefaultUIController {
 
     // Menu item for viewing assets
     $items['asset/' . $wildcard] = $view_base;
+    $items['asset/' . $wildcard . '/view'] = array(
+      'title' => 'View',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+    );
 
     return $items;
   }
@@ -338,7 +342,7 @@ function asset_edit_form($form, &$form_state, $asset) {
   if (!empty($asset->id) && empty($asset_type->data['purge'])) {
     $title = 'Delete';
     if(function_exists('fett_icon')) fett_icon($title);
-    $form['actions']['delete']['#markup'] = l($title, 'admin/content/assets/manage/'.$asset->id.'/delete', array('html'=>TRUE, 'attributes'=>array('class'=>array('button','tiny','text'))));
+    $form['actions']['delete']['#markup'] = l($title, asset_url($asset, 'delete'), array('html'=>TRUE, 'attributes'=>array('class'=>array('button','tiny','text'))));
   }
 
   // We append the validate handler to #validate in case a form callback_wrapper

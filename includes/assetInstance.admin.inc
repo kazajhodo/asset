@@ -60,7 +60,7 @@ function asset_instance_edit_form($form, &$form_state, $asset, $instance) {
   if (!empty($instance->id)) {
     $title = 'Delete';
     if(function_exists('fett_icon')) fett_icon($title);
-    $form['actions']['delete']['#markup'] = l($title, 'admin/content/assets/manage/'.$asset->id.'/instance/'.$instance->id.'/delete', array('html'=>TRUE, 'attributes'=>array('class'=>array('button','tiny','text'))));
+    $form['actions']['delete']['#markup'] = l($title, 'admin/content/assets/'.$asset->id.'/instance/'.$instance->id.'/delete', array('html'=>TRUE, 'attributes'=>array('class'=>array('button','tiny','text'))));
   }
 
   // We append the validate handler to #validate in case a form callback_wrapper

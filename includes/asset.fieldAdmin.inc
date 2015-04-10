@@ -46,7 +46,7 @@ function asset_form_field_form(&$form, &$form_state){
   $form['instance']['settings']['asset']['default'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use Default Asset Settings'),
-    '#description' => t('Defaults are set at !url.', array('!url' => l('admin/structure/assets/settings','admin/structure/assets/settings'))),
+    '#description' => t('Defaults are set via !url.', array('!url' => l('admin/structure/assets/settings','admin/structure/assets/settings'))),
     '#default_value' => isset($instance['settings']['asset']['default']) ? $instance['settings']['asset']['default'] : 1,
     '#element_validate' => array('asset_configuration_form_asset_default_validate'),
     '#states' => array(

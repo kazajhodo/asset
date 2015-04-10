@@ -153,22 +153,30 @@ function asset_menu_local_tasks_alter(&$data, $router_item, $root_path) {
         '#theme' => 'menu_local_action',
         '#link' => $item,
       );
+      return;
     }
   }
   if ($root_path == 'asset/%'){
     $items = array();
+    // $items += menu_contextual_links('asset', 'admin/content/assets', array($router_item['original_map'][1]));
+    $asset = $router_item['page_arguments'][0];
+    $items += menu_contextual_links('asset', asset_url($asset->id, 'list'), array($asset->id));
     $items['assets-list'] = menu_get_item('admin/content/assets');
     $items['assets-list']['title'] = t('Assets List');
-    $items += menu_contextual_links('asset', 'admin/content/assets/manage', array($router_item['original_map'][1]));
+
     foreach($items as $item){
       if ($item['access']) {
+        // $item['localized_options']['query'] = drupal_get_destination();
         $data['tabs'][0]['output'][] = array(
           '#theme' => 'menu_local_task',
           '#link' => $item,
         );
       }
     }
-    $data['tabs'][0]['count'] = count($data['tabs'][0]['output']);
+    if(isset($data['tabs'][0])){
+      $data['tabs'][0]['count'] = count($data['tabs'][0]['output']);
+    }
+    return;
   }
 }
 
@@ -607,17 +615,20 @@ function asset_url($asset, $op = 'view'){
     $asset = asset_load($asset);
   }
   $defaults = array(
-    'list' => 'admin/content/assets',
     'view' => 'asset/[asset:id]',
+    'list' => 'admin/content/assets',
     'edit' => 'admin/content/assets/[asset:id]/edit',
     'delete' => 'admin/content/assets/[asset:id]/delete',
   );
-  $url = isset($defaults[$op]) ? $defaults[$op] : $defaults['view'];
-  if(isset($asset_types[$asset->type]) && !empty($asset_types[$asset->type]->data['path'])){
-    if($op == 'list'){
-      return $asset_types[$asset->type]->data['path'];
+  $op = isset($defaults[$op]) ? $op : 'view';
+  $url = $defaults[$op];
+  if($op !== 'view'){
+    if(isset($asset_types[$asset->type]) && !empty($asset_types[$asset->type]->data['path'])){
+      if($op == 'list'){
+        return $asset_types[$asset->type]->data['path'];
+      }
+      $url = preg_replace('/^[^\[]+/', $asset_types[$asset->type]->data['path'] . '/', $url);
     }
-    $url = preg_replace('/^[^\[]+/', $asset_types[$asset->type]->data['path'] . '/', $url);
   }
   return token_replace($url, array('asset' => $asset));
 }
@@ -637,6 +648,9 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
 
   $output['#attached']['css'][] = drupal_get_path('module','asset') . '/css/asset.browser.css';
   $output['#attached']['js'][] = drupal_get_path('module','asset') . '/js/asset.browser.js';
+  $output['#attached']['library'][] = array('system', 'drupal.ajax');
+  $output['#attached']['library'][] = array('system', 'jquery.form');
+  $output['#attached']['js'][] = drupal_get_path('module','views') . '/js/ajax_view.js';
 
   $view_name = 'asset_' . $asset_type->type;
   $display_id = 'default';

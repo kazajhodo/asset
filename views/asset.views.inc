@@ -36,7 +36,7 @@ function asset_views_data_alter(&$data) {
   );
   $data['asset']['asset_ops'] = array(
     'field' => array(
-      'title' => t('Operations links'),
+      'title' => t('Operation links'),
       'help' => t('Display all operations available for this asset.'),
       'handler' => 'asset_handler_ops_field',
     ),

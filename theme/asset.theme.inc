@@ -90,7 +90,7 @@ function _asset_preprocess_entity(&$vars) {
         $vars['content']['instances'][$instance_id]['info'] = array();
         $vars['content']['instances'][$instance_id]['info']['#prefix'] = '<div class="asset-instance-info">';
         $vars['content']['instances'][$instance_id]['info']['#suffix'] = '</div>';
-        $links = menu_contextual_links('asset', 'admin/content/assets/manage/'.$asset->id.'/instance', array($instance_id));
+        $links = menu_contextual_links('asset', 'admin/content/assets/'.$asset->id.'/instance', array($instance_id));
         if(!empty($links)){
           foreach($links as &$link){
             $title = &$link['title'];

@@ -67,7 +67,7 @@
 }
 
 .asset-browser .views-row .asset-select span{
-  margin-top:-40px;
+  margin-top:-50px;
   display:block;
   text-align: center;
   -webkit-transition: margin .3s ease-out;
@@ -81,7 +81,7 @@
 }
 
 .asset-browser .views-row .asset-select:hover span{
-  margin-top:25px;
+  margin-top:15px;
 }
 
 .asset-browser .views-row .asset-select:focus{

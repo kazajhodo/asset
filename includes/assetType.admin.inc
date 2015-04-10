@@ -310,6 +310,7 @@ function asset_type_widget_form(AssetType $asset_type, &$form_state, $parents = 
     '#description' => t('An asset can have additional settings. These settings allow changing an asset per implementation.'),
     '#element_validate' => array('asset_type_widget_form_validate'),
   );
+  $form_state['widgets'] = array();
   foreach($asset_type->widgetLoad() as $widget_id => $widget){
     $form_state['widgets'][$widget_id] = $widget;
     $form[$widget->getId()] = asset_widget_settings_form_element($widget, $parents);
