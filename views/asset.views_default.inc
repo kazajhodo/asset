@@ -78,7 +78,7 @@ function asset_views_default_views_browser($asset_type){
   /* Field: Asset: Image */
   if($has_image){
     $handler->display->display_options['fields'][$has_image]['id'] = $has_image;
-    $handler->display->display_options['fields'][$has_image]['table'] = 'field_data_field_asset_image';
+    $handler->display->display_options['fields'][$has_image]['table'] = 'field_data_' . $has_image;
     $handler->display->display_options['fields'][$has_image]['field'] = $has_image;
     $handler->display->display_options['fields'][$has_image]['label'] = '';
     $handler->display->display_options['fields'][$has_image]['element_label_colon'] = FALSE;
@@ -91,7 +91,7 @@ function asset_views_default_views_browser($asset_type){
   /* Field: Asset: Video */
   if($has_video){
     $handler->display->display_options['fields'][$has_video]['id'] = $has_video;
-    $handler->display->display_options['fields'][$has_video]['table'] = 'field_data_field_asset_video';
+    $handler->display->display_options['fields'][$has_video]['table'] = 'field_data_field_' . $has_video;
     $handler->display->display_options['fields'][$has_video]['field'] = $has_video;
     $handler->display->display_options['fields'][$has_video]['label'] = '';
     $handler->display->display_options['fields'][$has_video]['click_sort_column'] = 'video_url';
