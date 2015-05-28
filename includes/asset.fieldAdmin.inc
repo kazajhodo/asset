@@ -85,41 +85,8 @@ function asset_configuration_form($defaults = array()){
     '#collapsed' => FALSE,
   );
 
-  $asset_types = asset_get_types();
+  $form['info']['#markup'] = '<div class="description">' . t('Temporary placeholder for future settings.') . '</div>';
 
-  $form['assets'] = array(
-    '#type' => 'item',
-    '#title' => t('Enabled Assets'),
-    '#tree' => TRUE,
-    '#element_validate' => array('asset_configuration_form_asset_assets_validate')
-  );
-  foreach($asset_types as $bundle => $asset_type){
-
-    $form['assets'][$bundle] = array(
-      '#type' => 'container',
-      '#tree' => TRUE,
-    );
-
-    $form['assets'][$bundle]['status'] = array(
-      '#type' => 'checkbox',
-      '#title' => '<i class="fa fa-' . $asset_type->data['icon'] . '"></i> ' . $asset_type->name,
-      '#default_value' => isset($defaults['assets'][$bundle]['status']) ? $defaults['assets'][$bundle]['status'] : 0,
-    );
-
-  }
-
+  drupal_alter('asset_configuration_form', $form, $default_values);
   return $form;
-}
-
-function asset_configuration_form_asset_assets_validate($form, &$form_state){
-  $values = drupal_array_get_nested_value($form_state['values'], $form['#parents']);
-  // $values = &$form_state['values'];
-  if(!empty($values)){
-    foreach($values as $asset_type => $data){
-      if(empty($data['status'])){
-        unset($values[$asset_type]);
-      }
-    }
-  }
-  drupal_array_set_nested_value($form_state['values'], $form['#parents'], $values);
 }
