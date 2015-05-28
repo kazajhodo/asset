@@ -61,7 +61,7 @@ class assetWidgetLink extends assetWidget {
         $element['#attached']['js'][] = $field_js;
 
         $button_text = !empty($instance['settings']['linkit']['button_text']) ? $instance['settings']['linkit']['button_text'] : t('Search Local Content');
-        $element['#field_suffix'] = '<a class="button tiny linkit-field-button linkit-field-' . $field_id . '" href="#"><i class="fa fa-search"></i> '.$button_text.'</a>';
+        $element['#field_suffix'] = '<a class="button tiny expand secondary linkit-field-button linkit-field-' . $field_id . '" href="#"><i class="fa fa-search"></i> '.$button_text.'</a>';
       }
     }
 
