@@ -436,7 +436,7 @@ function asset_delete_form_submit($form, &$form_state) {
   drupal_set_message(t('The asset %name has been deleted.', array('%name' => $asset->name)));
   watchdog('asset', 'Deleted asset %name.', array('%name' => $asset->name));
 
-  $form_state['redirect'] = 'admin/content/assets';
+  $form_state['redirect'] = user_access('administer assets') ? 'admin/content/assets' : '<front>';
 }
 
 /**
