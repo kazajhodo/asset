@@ -646,10 +646,10 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
   $output['#prefix'] = '<div class="asset-browser clearfix">';
   $output['#suffix'] = '</div>';
 
-  $output['#attached']['css'][] = drupal_get_path('module','asset') . '/css/asset.browser.css';
-  $output['#attached']['js'][] = drupal_get_path('module','asset') . '/js/asset.browser.js';
   $output['#attached']['library'][] = array('system', 'drupal.ajax');
   $output['#attached']['library'][] = array('system', 'jquery.form');
+  $output['#attached']['css'][] = drupal_get_path('module','asset') . '/css/asset.browser.css';
+  $output['#attached']['js']['browser'] = drupal_get_path('module','asset') . '/js/asset.browser.js';
   $output['#attached']['js'][] = drupal_get_path('module','views') . '/js/ajax_view.js';
 
   $view_name = 'asset_' . $asset_type->type;
@@ -1069,17 +1069,17 @@ function asset_views_api() {
  * Inline entity form "add existing" alter
  */
 function asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
-  module_load_include('inc', 'asset', 'asset.inlineEntityForm');
+  module_load_include('inc', 'asset', 'includes/asset.inlineEntityForm');
   _asset_inline_entity_form_reference_form_alter($form, $form_state);
 }
 
 function asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
-  module_load_include('inc', 'asset', 'asset.inlineEntityForm');
+  module_load_include('inc', 'asset', 'includes/asset.inlineEntityForm');
   _asset_inline_entity_form_entity_form_alter($form, $form_state);
 }
 
 function asset_field_widget_inline_entity_form_form_alter(&$element, &$form_state, $context){
-  module_load_include('inc', 'asset', 'asset.inlineEntityForm');
+  module_load_include('inc', 'asset', 'includes/asset.inlineEntityForm');
   _asset_field_widget_inline_entity_form_form_alter($element, $form_state, $context);
 }
 
@@ -1147,19 +1147,21 @@ function asset_get_handler($type, $name) {
  * Implements hook_form_alter().
  */
 function asset_form_views_exposed_form_alter(&$form, &$form_state) {
-  // ------------------------------------------------------------
-  // Add an own reset button to all views exposed forms. The reason behind is,
-  // that the default Drupal reset button doesn't play nice with AJAX
-  // and jumps back to the front page because of URL problems. So it's unusable for us.
-  //
-  // Add class to make it better selectable in JS and CSS
-  $form['submit']['#attributes'] = array('class' => array('my-views-filter-submit'));
-  $submit_btn_id = $form['submit']['#id'];
-  if (!empty($submit_btn_id) && !empty($form['reset'])) {
-    // Add own reset button
-    $form['submit']['#suffix'] = '<button onclick="javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;" class="form-submit ico-remove form-reset my-views-filter-reset">' . t('Reset') . '</button>';
-    // Remove the original RESET button.
-    unset($form['reset']);
+  if(isset($form_state['view']) && !empty($form_state['view']->use_ajax)){
+    // ------------------------------------------------------------
+    // Add an own reset button to all views exposed forms. The reason behind is,
+    // that the default Drupal reset button doesn't play nice with AJAX
+    // and jumps back to the front page because of URL problems. So it's unusable for us.
+    //
+    // Add class to make it better selectable in JS and CSS
+    $form['submit']['#attributes'] = array('class' => array('views-filter-submit'));
+    $submit_btn_id = $form['submit']['#id'];
+    if (!empty($submit_btn_id) && !empty($form['reset'])) {
+      // Add own reset button
+      $form['submit']['#suffix'] = '<button onclick="javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;" class="form-submit ico-remove form-reset views-filter-reset">' . t('Reset') . '</button>';
+      // Remove the original RESET button.
+      unset($form['reset']);
+    }
   }
 }
 
