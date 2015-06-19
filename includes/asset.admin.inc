@@ -403,7 +403,7 @@ function asset_delete_form($form, &$form_state, $asset) {
     if(!empty($asset_type->data['usage_info'])){
       $form['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
 
-      $message = '<div class="alert-box alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset remove it from anywhere it is used.').'</div>';
+      $message = '<div class="alert-box alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset will remove it from anywhere it is used.').'</div>';
 
       $form['usage'] = array(
         '#theme' => 'asset_usage',
