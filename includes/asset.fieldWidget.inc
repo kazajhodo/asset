@@ -37,6 +37,10 @@ function asset_field_formatter_info() {
         'use_summary'   => 0,
       ),
     ),
+    'asset_file' => array(
+      'label' => t('ASSET | File'),
+      'field types' => array('file'),
+    ),
   );
 }
 
@@ -416,6 +420,19 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
         }
 
         $element[$delta] = array('#markup' => $output);
+      }
+      break;
+
+    case 'asset_file':
+
+      foreach ($items as $delta => $item) {
+        if($entity_type == 'asset'){
+          $item['description'] = $entity->name;
+        }
+        $element[$delta] = array(
+          '#theme' => 'file_link',
+          '#file' => (object) $item,
+        );
       }
       break;
   }
