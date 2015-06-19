@@ -18,7 +18,7 @@ function asset_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
 }
 
 /**
- * Mee configuration form.
+ * Asset configuration form.
  */
 function asset_form_field_form(&$form, &$form_state){
   $instance = empty($form['#instance']) ? array() : $form['#instance'];
