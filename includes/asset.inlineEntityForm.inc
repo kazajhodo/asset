@@ -185,11 +185,20 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
 
     if (!empty($info['fieldable'])) {
       $langcode = entity_language($this->entityType, $entity);
-      if(!empty($entity->id) && empty($asset_type->data['no_multiple'])){
-        $entity_form['notice'] = array(
-          '#markup' => '<div class="alert-box warning">Editing this '.strtolower($asset_type->name).' asset will impact all other areas where this asset is used.</div>',
-          '#weight' => -6,
-        );
+      if(!empty($entity->id) && empty($asset_type->data['no_multiple']) && $usage = asset_usage($entity->id)){
+        $asset_type = asset_type_load($entity->type);
+        if(!empty($asset_type->data['usage_info'])){
+          $entity_form['notice'] = array(
+            '#markup' => '<div class="alert-box warning">Editing this '.strtolower($asset_type->name).' asset will impact all other areas where this asset is used.</div>',
+            '#weight' => -7,
+          );
+          $entity_form['usage'] = array(
+            '#theme' => 'asset_usage',
+            '#usage' => $usage,
+            '#weight' => -6,
+          );
+          $remove_form['usage']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
+        }
       }
       if(empty($asset_type->data['auto_title'])){
         $entity_form['name'] = array(
@@ -248,6 +257,43 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     if(method_exists($this,'entityFormSharedElements')) $this->entityFormSharedElements($entity_form);
 
     return $entity_form;
+  }
+
+  /**
+   * Returns the remove form to be shown through the IEF widget.
+   *
+   * @param $remove_form
+   *   The remove form.
+   * @param $form_state
+   *   The form state of the parent form.
+   */
+  public function removeForm($remove_form, &$form_state) {
+    $remove_form = parent::removeForm($remove_form, $form_state);
+    $remove_form['message']['#markup'] .= '<br>';
+    $parents = asset_parents_to_name($remove_form['#parents']);
+    $remove_form['usage'] = array(
+      '#type' => 'container',
+      '#states' => array(
+        'visible' => array(
+          ':input[name="'.$parents.'[delete]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+    $remove_form['usage']['info']['#markup'] = 'test';
+    $asset = $remove_form['#entity'];
+    if($usage = asset_usage($asset->id)){
+      $asset_type = asset_type_load($asset->type);
+      if(!empty($asset_type->data['usage_info'])){
+        $remove_form['usage']['warning']['#markup'] = '<div class="alert-box error"><strong>'.t('This %type is currently being used.', array('%type' => strtolower($asset_type->name))).'</strong> '.t('Deleting this asset remove it from anywhere it is used.').'</div>';
+        $remove_form['usage']['info'] = array(
+          '#theme' => 'asset_usage',
+          '#usage' => $usage,
+          '#weight' => 1,
+        );
+        $remove_form['usage']['info']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
+      }
+    }
+    return $remove_form;
   }
 
 }
