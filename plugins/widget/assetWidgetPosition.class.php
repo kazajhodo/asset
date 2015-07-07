@@ -13,18 +13,6 @@ class assetWidgetPosition extends assetWidget {
     $settings = $this->getFormSettings();
     $values = $this->getValues();
 
-    // $form['position'] = array(
-    //   '#type' => 'select',
-    //   '#title' => t('Position'),
-    //   '#options' => array(
-    //     '' => t('- None -'),
-    //     'center' => t('Center'),
-    //     'left' => t('Left'),
-    //     'right' => t('Right'),
-    //   ),
-    //   '#default_value' => isset($values['position']) ? $values['position'] : 'center',
-    // );
-
     $form['position'] = array(
       '#type' => 'radios',
       '#title' => t('Position'),
@@ -43,9 +31,13 @@ class assetWidgetPosition extends assetWidget {
 
   public function instanceRender(&$vars) {
     $values = $this->getValues();
+    $vars['content']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/plugins/widget/css/assetWidgetPosition.css';
     if(!empty($values['position'])){
-      $vars['content']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/plugins/widget/css/assetWidgetPosition.css';
       $vars['classes_array'][] = 'asset-position-' . $values['position'];
+    }
+    else{
+      $vars['element_type'] = 'span';
+      $vars['classes_array'][] = 'asset-position-default';
     }
   }
 

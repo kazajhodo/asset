@@ -11,6 +11,7 @@ function _asset_preprocess_entity(&$vars) {
   $key = 'asset-' . $asset->id . '-' . $asset->instance->id;
   $vars['classes_array'][] = drupal_html_class('asset-' . $vars['view_mode']);
   $vars['classes_array'][] = $key;
+  $vars['element_type'] = 'div';
   // If view mode is asset, we need to process it through the enabled widgets.
   if(in_array($vars['view_mode'], array('asset'))){
     foreach($instance->widgets as $widget_id => $widget){
@@ -113,6 +114,12 @@ function _asset_preprocess_entity(&$vars) {
         $vars['content']['instances'][$instance_id]['entity']['#suffix'] = '</div>';
       }
     }
+  }
+
+  // Send element type to children.
+  foreach (element_children($vars['content']) as $field_name) {
+    $element = &$vars['content'][$field_name];
+    $element['#element_type'] = $vars['element_type'];
   }
 }
 
