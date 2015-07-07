@@ -211,12 +211,18 @@ function asset_theme() {
       'file' => 'asset.theme.inc',
       'path' => drupal_get_path('module', 'asset') . '/theme'
     ),
+    'asset_field' => array(
+      'variables' => array('use' => array()),
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme'
+    ),
   );
   $instances = field_info_instances('asset');
   foreach($instances as $asset_type_name => $fields){
     foreach($fields as $field_id => $field){
-      if(substr($field_id, 6, 5) == 'asset'){
-        $theme['field__' . $field_id] = array(
+      // if(substr($field_id, 6, 5) == 'asset'){
+      if($field['entity_type'] == 'asset'){
+        $theme['field__asset__' . $field_id] = array(
           'render element' => 'element',
           'template' => 'field--asset',
           'path' => drupal_get_path('module', 'asset') . '/theme',
@@ -403,9 +409,7 @@ function asset_page_view($asset, $view_mode = 'full') {
  */
 function asset_render($asset, $view_mode = 'default', $preview = FALSE) {
   $asset->asset_preview = $preview;
-  $controller = entity_get_controller('asset');
-  $content = $controller->view(array($asset->id => $asset), $view_mode);
-  return $content;
+  return $asset->view($view_mode);
 }
 
 /**
@@ -415,6 +419,24 @@ function asset_preprocess_entity(&$vars) {
   if(empty($vars['asset']) || empty($vars['asset']->instance)) return;
   module_load_include('inc', 'asset', 'theme/asset.theme');
   drupal_alter('preprocess_asset', $vars);
+
+  foreach (module_implements('preprocess_asset') as $module) {
+    $function = $module . '_preprocess_asset';
+    $function($vars);
+  }
+
+   // Let the themes play too, because pre render is a very themey thing.
+  foreach ($GLOBALS['base_theme_info'] as $base) {
+    $function = $base->name . '_preprocess_asset';
+    if (function_exists($function)) {
+      $function($vars);
+    }
+  }
+  $function = $GLOBALS['theme'] . '_preprocess_asset';
+  if (function_exists($function)) {
+    $function($vars);
+  }
+
   _asset_preprocess_entity($vars);
 }
 
