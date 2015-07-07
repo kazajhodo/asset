@@ -101,7 +101,6 @@ class AssetController extends EntityAPIController {
    */
   public function loadInstance($asset, $instance_id = NULL){
     static $object_cache;
-    // dsm($asset);
     // Load an instance if there is not one currently.
     $load_asset = !isset($asset->instance);
     // If there is an instance but it does not match the instance_id being requested
@@ -156,14 +155,5 @@ class AssetController extends EntityAPIController {
       asset_usage_purge_by_asset($id);
     }
   }
-
-  // /**
-  //  * Overridden.
-  //  * @see DrupalDefaultEntityController::cacheSet()
-  //  */
-  // public function cacheSet($entities) {
-  //   dsm($entities);
-  //   parent::cacheSet($entities);
-  // }
 
 }
