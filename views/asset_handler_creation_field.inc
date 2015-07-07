@@ -16,6 +16,8 @@ class asset_handler_creation_field extends views_handler_field {
   function render($values) {
 
     $output = $bar = array();
+
+    // Asset Support
     if($this->view->base_table == 'asset' && isset($this->view->filter['type']->value)){
       $bar['right'] = array(
         '#prefix' => '<ul class="right">',
@@ -33,6 +35,28 @@ class asset_handler_creation_field extends views_handler_field {
             '#theme' => 'menu_local_action__ops',
             '#link' => $link
           );
+        }
+      }
+    }
+
+    // Node Support
+    if($this->view->base_table == 'node' && isset($this->view->filter['type']->value)){
+      $types = node_type_get_types();
+      foreach($this->view->filter['type']->value as $type){
+        if(isset($types[$type])){
+          $node_type = $types[$type];
+          $link = menu_get_item('node/add/' . $node_type->type);
+          $link['title'] = 'Add ' . $link['title'];
+          $link['localized_options']['query'] = drupal_get_destination();
+          if(function_exists('boushh_action_links_add')){
+            boushh_action_links_add($link);
+          }
+          else{
+            $bar['right'][] = array(
+              '#theme' => 'menu_local_action__ops',
+              '#link' => $link
+            );
+          }
         }
       }
     }
