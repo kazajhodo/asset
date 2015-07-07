@@ -23,6 +23,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
    */
   public function defaultSettings() {
     $defaults = parent::defaultSettings();
+    $defaults['auto_title'] = FALSE;
     $defaults['instance_default_creation'] = FALSE;
     return $defaults;
   }
@@ -40,6 +41,11 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
    */
   public function settingsForm($field, $instance) {
     $form = parent::settingsForm($field, $instance);
+    $form['auto_title'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Hide title field and automatically generate title'),
+      '#default_value' => $this->settings['auto_title'],
+    );
     $form['instance_default_creation'] = array(
       '#type'          => 'checkbox',
       '#title'         => t('Allow default instance to be created/edited'),
@@ -185,7 +191,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
 
     if (!empty($info['fieldable'])) {
       $langcode = entity_language($this->entityType, $entity);
-      if(!empty($entity->id) && empty($asset_type->data['no_multiple']) && $usage = asset_usage($entity->id)){
+      if(!empty($entity->id) && empty($asset_type->data['no_multiple']) && empty($this->settings['delete_references']) && $usage = asset_usage($entity->id)){
         $asset_type = asset_type_load($entity->type);
         if(!empty($asset_type->data['usage_info'])){
           $entity_form['notice'] = array(
@@ -200,7 +206,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
           $remove_form['usage']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
         }
       }
-      if(empty($asset_type->data['auto_title'])){
+      if(!$this->settings['auto_title'] && empty($asset_type->data['auto_title'])){
         $entity_form['name'] = array(
           '#type' => 'textfield',
           '#title' => t($asset_type->name . ' Name'),
@@ -387,19 +393,6 @@ function _asset_field_widget_inline_entity_form_form_alter(&$element, &$form_sta
   // Only act on assets.
   if($field['settings']['target_type'] !== 'asset') return;
 
-  // $instance = $context['instance'];
-  // $widget = $instance['widget'];
-  // $settings = inline_entity_form_settings($field, $instance);
-  // $entity_info = entity_get_info($settings['entity_type']);
-  // $cardinality = $field['cardinality'];
-  // $controller = inline_entity_form_get_controller($instance);
-
-  // The current entity type is not supported, execution can't continue.
-  // if (!$controller) {
-  //   return array();
-  // }
-
-  // dsm($element);
   if(isset($element['actions'])){
     $element['actions']['#attributes'] = array();
     $element['actions']['#type'] = 'actions';
