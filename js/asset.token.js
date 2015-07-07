@@ -18,14 +18,14 @@ $.asset.toAsset = function(text) {
   }
   var match = function(text) {
     var match, regex;
-    regex = new RegExp("(\\[asset-[0-9]+(-[0-9]+)?\\])", "g");
+    regex = new RegExp("((\\<p\\>)?\\[asset-[0-9]+(-[0-9]+)?\\](\\<\\/p\\>)?)", "g");
     match = void 0;
     text = text.replace(regex, function(match, text) {
       var aid, iid, base, parts;
-      regex = new RegExp("\\[asset-([0-9]+)-?([0-9]+)?\\]", ["i"]);
+      regex = new RegExp("(\\<p\\>)?\\[asset-([0-9]+)-?([0-9]+)?\\](\\<\\/p\\>)?", ["i"]);
       parts = match.match(regex);
-      aid = parts[1];
-      iid = (parts[2] ? parts[2] : 0);
+      aid = parts[2];
+      iid = (parts[3] ? parts[3] : 0);
       base = aid + "-" + iid;
       if (assets[base]) {
         return text.replace(regex, assets[base]);
