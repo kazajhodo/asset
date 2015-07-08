@@ -93,17 +93,17 @@ class AssetUIController extends EntityDefaultUIController {
         $custom_id_count = count(explode('/', $type->data['path']));
 
         // Custom View
-        // $items[$type->data['path'] . '/' . $wildcard] = array(
-        //   'title arguments' => array($custom_id_count),
-        //   'page arguments' => array($custom_id_count),
-        //   'access arguments' => array('view', $custom_id_count),
-        //   'type' => MENU_NORMAL_ITEM,
-        // ) + $view_base;
-        // $items[$type->data['path'] . '/' . $wildcard . '/view'] = array(
-        //   'title' => 'View ' . $type->name,
-        //   'type' => MENU_DEFAULT_LOCAL_TASK,
-        //   'weight' => -10,
-        // );
+        $items[$type->data['path'] . '/' . $wildcard] = array(
+          'title arguments' => array($custom_id_count),
+          'page arguments' => array($custom_id_count),
+          'access arguments' => array('view', $custom_id_count),
+          'type' => MENU_NORMAL_ITEM,
+        ) + $view_base;
+        $items[$type->data['path'] . '/' . $wildcard . '/view'] = array(
+          'title' => 'View ' . $type->name,
+          'type' => MENU_DEFAULT_LOCAL_TASK,
+          'weight' => -10,
+        );
         // Custom Edit
         $items[$type->data['path'] . '/' . $wildcard . '/edit'] = array(
           'title' => 'Edit ' . $type->name,
