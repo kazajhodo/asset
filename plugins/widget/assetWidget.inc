@@ -112,7 +112,7 @@ abstract class assetWidget implements assetWidgetInterface {
 
   public function settingsForm($parents) {}
 
-  public function settingsFormValidate() {}
+  public function settingsFormValidate(&$values) {}
 
   public function instanceForm() {}
 
