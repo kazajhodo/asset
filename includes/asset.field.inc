@@ -62,22 +62,26 @@ function asset_preprocess_field(&$vars) {
     list($id,, $bundle) = entity_extract_ids($entity_type, $entity);
     $field = field_info_field($vars['element']['#field_name']);
     $instance = asset_field_info_instance($vars['element']['#entity_type'], $vars['element']['#field_name'], $vars['element']['#bundle']);
-    $allowed_types = !empty($instance['settings']['asset']['settings']['assets']) ? array_keys($instance['settings']['asset']['settings']['assets']) : array();
-    // Add asset js settings for other modules to use.
-    if(!empty($allowed_types) && !empty($instance['settings']['asset']['settings']['assets'])){
-      $asset_types = asset_type_load_multiple($allowed_types);
-      $settings = $instance['settings']['asset']['settings']['assets'];
-      $js = array();
-      foreach($settings as $asset_type => &$data){
-        foreach($asset_types[$asset_type] as $key => $info){
-          if(!empty($info)){
-            $data[$key] = $info;
-          }
-        }
-      }
-      $js['asset']['fields'][$entity_type][$field['field_name']] = $settings;
-      drupal_add_js($js, 'setting');
-    }
+
+    // @TODO allowed types are now handled by eXo instead of the asset module.
+    // This may need to be reconsidered.
+    $allowed_types = array();
+    // $allowed_types = !empty($instance['settings']['asset']['settings']['assets']) ? array_keys($instance['settings']['asset']['settings']['assets']) : array();
+    // // Add asset js settings for other modules to use.
+    // if(!empty($allowed_types) && !empty($instance['settings']['asset']['settings']['assets'])){
+    //   $asset_types = asset_type_load_multiple($allowed_types);
+    //   $settings = $instance['settings']['asset']['settings']['assets'];
+    //   $js = array();
+    //   foreach($settings as $asset_type => &$data){
+    //     foreach($asset_types[$asset_type] as $key => $info){
+    //       if(!empty($info)){
+    //         $data[$key] = $info;
+    //       }
+    //     }
+    //   }
+    //   $js['asset']['fields'][$entity_type][$field['field_name']] = $settings;
+    //   drupal_add_js($js, 'setting');
+    // }
     if(!empty($instance['settings']['asset']['status'])){
       $preview = !empty($entity->asset_preview);
       foreach($vars['items'] as &$data){
