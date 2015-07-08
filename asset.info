@@ -6,6 +6,7 @@ version     = "7.x-2.x-dev"
 
 dependencies[] = ctools
 dependencies[] = entity
+dependencies[] = entity_token
 dependencies[] = views
 
 files[] = plugins/widget/assetWidget.inc
