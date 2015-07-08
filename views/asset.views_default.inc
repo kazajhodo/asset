@@ -21,16 +21,24 @@ function asset_views_default_views_browser($asset_type){
 
   $info = field_info_instances('asset', $asset_type->type);
   $has_image = $has_file = $has_video = FALSE;
-  foreach($info as $field){
-    switch($field['widget']['type']){
-      case 'image_image':
+  foreach($info as $instance){
+    $field = field_info_field($instance['field_name']);
+    switch($field['type']){
+      case 'image':
         $has_image = $field['field_name'];
         break;
-      case 'file_generic':
+      case 'file':
         $has_file = $field['field_name'];
         break;
-      case 'video_embed_field_video':
+      case 'video_embed_field':
         $has_video = $field['field_name'];
+        break;
+      case 'entityreference':
+        $has_reference = array(
+          'field_name' => $field['field_name'],
+          'instance' => $instance,
+          'field' => $field,
+        );
         break;
     }
   }
@@ -89,9 +97,9 @@ function asset_views_default_views_browser($asset_type){
     );
   }
   /* Field: Asset: Video */
-  if($has_video){
+  elseif($has_video){
     $handler->display->display_options['fields'][$has_video]['id'] = $has_video;
-    $handler->display->display_options['fields'][$has_video]['table'] = 'field_data_field_' . $has_video;
+    $handler->display->display_options['fields'][$has_video]['table'] = 'field_data_' . $has_video;
     $handler->display->display_options['fields'][$has_video]['field'] = $has_video;
     $handler->display->display_options['fields'][$has_video]['label'] = '';
     $handler->display->display_options['fields'][$has_video]['click_sort_column'] = 'video_url';
@@ -102,14 +110,36 @@ function asset_views_default_views_browser($asset_type){
     );
   }
   /* Field: Asset: File */
-  if($has_file){
+  elseif($has_file){
     $handler->display->display_options['fields'][$has_file]['id'] = $has_file;
-    $handler->display->display_options['fields'][$has_file]['table'] = 'field_data_field_asset_file';
+    $handler->display->display_options['fields'][$has_file]['table'] = 'field_data_' . $has_file;
     $handler->display->display_options['fields'][$has_file]['field'] = $has_file;
     $handler->display->display_options['fields'][$has_file]['label'] = '';
     $handler->display->display_options['fields'][$has_file]['element_label_colon'] = FALSE;
     $handler->display->display_options['fields'][$has_file]['click_sort_column'] = 'fid';
     $handler->display->display_options['fields'][$has_file]['type'] = 'file_mime_type_icon';
+  }
+  elseif($has_reference &&
+    $has_reference['field']['settings']['target_type'] == 'asset' &&
+    isset($has_reference['field']['settings']['handler_settings']['target_bundles']) &&
+    count($has_reference['field']['settings']['handler_settings']['target_bundles']) == 1){
+    foreach(field_info_instances('asset', key($has_reference['field']['settings']['handler_settings']['target_bundles'])) as $target_field_name => $target_instance){
+      $target_field = field_info_field($target_field_name);
+      if ($target_field['type'] == 'image') {
+        $handler->display->display_options['fields'][$has_reference['field_name']]['id'] = $has_reference['field_name'];
+        $handler->display->display_options['fields'][$has_reference['field_name']]['table'] = 'field_data_' . $has_reference['field_name'];
+        $handler->display->display_options['fields'][$has_reference['field_name']]['field'] = $has_reference['field_name'];
+        $handler->display->display_options['fields'][$has_reference['field_name']]['label'] = '';
+        // $handler->display->display_options['fields'][$has_reference['field_name']]['click_sort_column'] = 'target_id';
+        $handler->display->display_options['fields'][$has_reference['field_name']]['type'] = 'asset_image';
+        $handler->display->display_options['fields'][$has_reference['field_name']]['settings'] = array(
+          'field_name' => $target_field_name,
+          'image_style' => 'asset-thumb',
+          'image_link' => '',
+        );
+        break;
+      }
+    }
   }
   /* Field: Asset: Asset Select */
   $handler->display->display_options['fields']['asset_select']['id'] = 'asset_select';

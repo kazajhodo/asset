@@ -85,62 +85,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     // If only one product type is allowed, its fields can be used as columns.
     if (count($bundles) == 1) {
       $bundle = reset($bundles);
-
-      foreach (field_info_instances('asset', $bundle) as $field_name => $instance) {
-        $field = field_info_field($field_name);
-
-        // If the product has an imagefield, show it.
-        if ($field['type'] == 'image') {
-          // Determine the correct image style to use.
-          $image_style = 'thumbnail';
-          if (!empty($instance['widget']['settings']['preview_image_style'])) {
-            $image_style = $instance['widget']['settings']['preview_image_style'];
-          }
-
-          $fields[$field_name] = array(
-            'type' => 'field',
-            'label' => $instance['label'],
-            'formatter' => 'image',
-            'settings' => array('image_style' => $image_style),
-            'delta' => 0,
-            'weight' => -10,
-          );
-          // Don't add any other imagefields. One is enough.
-          break;
-        }
-
-        if ($field['type'] == 'video_embed_field'){
-          // Determine the correct image style to use.
-          $image_style = 'thumbnail';
-          if (!empty($instance['widget']['settings']['preview_image_style'])) {
-            $image_style = $instance['widget']['settings']['preview_image_style'];
-          }
-
-          $fields[$field_name] = array(
-            'type' => 'field',
-            'label' => $instance['label'],
-            'formatter' => 'video_embed_field_thumbnail',
-            'settings' => array('image_style' => $image_style),
-            'delta' => 0,
-            'weight' => -10,
-          );
-          // Don't add any other imagefields. One is enough.
-          break;
-        }
-
-        if ($field['type'] == 'file'){
-          $fields[$field_name] = array(
-            'type' => 'field',
-            'label' => $instance['label'],
-            'formatter' => 'file_default',
-            // 'settings' => array('image_style' => $image_style),
-            'delta' => 0,
-            'weight' => -10,
-          );
-          // Don't add any other imagefields. One is enough.
-          break;
-        }
-      }
+      $fields += $this->tableImage($bundle);
     }
     if (!empty($info['entity keys']['label'])) {
       $label_key = $info['entity keys']['label'];
@@ -167,6 +112,96 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       );
     }
 
+    return $fields;
+  }
+
+  /**
+   * Get the table image field if found.
+   */
+  public function tableImage($bundle) {
+    $fields = array();
+    foreach (field_info_instances('asset', $bundle) as $field_name => $instance) {
+      $field = field_info_field($field_name);
+
+      // If the entity has an imagefield, show it.
+      if ($field['type'] == 'image') {
+        // Determine the correct image style to use.
+        $image_style = 'thumbnail';
+        if (!empty($instance['widget']['settings']['preview_image_style'])) {
+          $image_style = $instance['widget']['settings']['preview_image_style'];
+        }
+
+        $fields[$field_name] = array(
+          'type' => 'field',
+          'label' => $instance['label'],
+          'formatter' => 'image',
+          'settings' => array('image_style' => $image_style),
+          'delta' => 0,
+          'weight' => -10,
+        );
+        // Don't add any other imagefields. One is enough.
+        break;
+      }
+
+      if ($field['type'] == 'video_embed_field'){
+        // Determine the correct image style to use.
+        $image_style = 'thumbnail';
+        if (!empty($instance['widget']['settings']['preview_image_style'])) {
+          $image_style = $instance['widget']['settings']['preview_image_style'];
+        }
+
+        $fields[$field_name] = array(
+          'type' => 'field',
+          'label' => $instance['label'],
+          'formatter' => 'video_embed_field_thumbnail',
+          'settings' => array('image_style' => $image_style),
+          'delta' => 0,
+          'weight' => -10,
+        );
+        // Don't add any other imagefields. One is enough.
+        break;
+      }
+
+      if ($field['type'] == 'file'){
+        $fields[$field_name] = array(
+          'type' => 'field',
+          'label' => $instance['label'],
+          'formatter' => 'file_default',
+          // 'settings' => array('image_style' => $image_style),
+          'delta' => 0,
+          'weight' => -10,
+        );
+        // Don't add any other imagefields. One is enough.
+        break;
+      }
+
+      // If the entity has a entityreference that contains an image field.
+      if ($field['type'] == 'entityreference' &&
+        $field['settings']['target_type'] == 'asset' &&
+        isset($field['settings']['handler_settings']['target_bundles']) &&
+        count($field['settings']['handler_settings']['target_bundles']) == 1){
+
+        foreach(field_info_instances('asset', key($field['settings']['handler_settings']['target_bundles'])) as $target_field_name => $target_instance){
+          $target_field = field_info_field($target_field_name);
+          if ($target_field['type'] == 'image') {
+            // Determine the correct image style to use.
+            $image_style = 'thumbnail';
+            if (!empty($target_instance['widget']['settings']['preview_image_style'])) {
+              $image_style = $target_instance['widget']['settings']['preview_image_style'];
+            }
+            $fields[$field_name] = array(
+              'type' => 'field',
+              'label' => $target_instance['label'],
+              'formatter' => 'asset_image',
+              'settings' => array('field_name' => $target_field_name, 'image_style' => $image_style),
+              'delta' => 0,
+              'weight' => -10,
+            );
+            break;
+          }
+        }
+      }
+    }
     return $fields;
   }
 

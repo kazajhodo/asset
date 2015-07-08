@@ -13,14 +13,14 @@ function asset_field_formatter_info() {
   );
 
   return array(
-    'asset_entity_view' => array(
-      'label' => t('Rendered asset'),
-      'description' => t('Display the referenced assets rendered by entity_view().'),
-      'field types' => array('entityreference'),
-      'settings' => array(
-        'view_mode' => 'asset',
-      ),
-    ),
+    // 'asset_entity_view' => array(
+    //   'label' => t('Rendered asset'),
+    //   'description' => t('Display the referenced assets rendered by entity_view().'),
+    //   'field types' => array('entityreference'),
+    //   'settings' => array(
+    //     'view_mode' => 'asset',
+    //   ),
+    // ),
     'asset_text_trimmed' => array(
       'label' => t('ASSET | Trimmed'),
       'field types' => array('text', 'text_long', 'text_with_summary'),
@@ -36,6 +36,11 @@ function asset_field_formatter_info() {
         'autop'         => 0,
         'use_summary'   => 0,
       ),
+    ),
+    'asset_image' => array(
+      'label' => t('ASSET | Image'),
+      'field types' => array('entityreference'),
+      'settings' => array('field_name' => '', 'image_style' => '', 'image_link' => ''),
     ),
     'asset_file' => array(
       'label' => t('ASSET | File'),
@@ -53,21 +58,46 @@ function asset_field_formatter_settings_form($field, $instance, $view_mode, $for
   $element = array();
 
   switch($display['type']){
-    case 'asset_entity_view':
-      $entity_info = entity_get_info($field['settings']['target_type']);
-      $options = asset_view_modes();
-      if (!empty($entity_info['view modes'])) {
-        foreach ($entity_info['view modes'] as $view_mode => $view_mode_settings) {
-          $options[$view_mode] = $view_mode_settings['label'];
+    // case 'asset_entity_view':
+    //   $entity_info = entity_get_info($field['settings']['target_type']);
+    //   $options = asset_view_modes();
+    //   if (!empty($entity_info['view modes'])) {
+    //     foreach ($entity_info['view modes'] as $view_mode => $view_mode_settings) {
+    //       $options[$view_mode] = $view_mode_settings['label'];
+    //     }
+    //   }
+    //   $element['view_mode'] = array(
+    //     '#type' => 'select',
+    //     '#options' => $options,
+    //     '#title' => t('View mode'),
+    //     '#default_value' => $settings['view_mode'],
+    //     '#access' => count($options) > 1,
+    //   );
+    //   break;
+    case 'asset_image':
+      if(isset($field['settings']['handler_settings']['target_bundles']) && count($field['settings']['handler_settings']['target_bundles']) === 1){
+        $target_type = $field['settings']['target_type'];
+        $target_bundle = key($field['settings']['handler_settings']['target_bundles']);
+        $field_names = array();
+        foreach (field_info_instances($target_type, $target_bundle) as $target_field_name => $target_instance) {
+          $target_field = field_info_field($target_field_name);
+          if ($target_field['type'] == 'image') {
+            $field_names[$target_field['field_name']] = $target_instance['label'] . ' [' . $target_field['field_name'] . ']';
+          }
+        }
+        if(!empty($field_names)){
+          module_load_include('inc', 'image', 'image.field');
+          $element = image_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
+          $element['field_name'] = array(
+            '#title' => t('Target image field'),
+            '#type' => 'select',
+            '#default_value' => $settings['field_name'],
+            '#required' => TRUE,
+            '#options' => $field_names,
+            '#weight' => -100,
+          );
         }
       }
-      $element['view_mode'] = array(
-        '#type' => 'select',
-        '#options' => $options,
-        '#title' => t('View mode'),
-        '#default_value' => $settings['view_mode'],
-        '#access' => count($options) > 1,
-      );
       break;
     case 'asset_text_trimmed':
 
@@ -215,15 +245,23 @@ function asset_field_formatter_settings_summary($field, $instance, $view_mode) {
 
   $summary = array();
 
-  if ($display['type'] == 'asset_entity_view') {
-    $entity_info = entity_get_info($field['settings']['target_type']);
-    $asset_view_modes = asset_view_modes();
-    $view_mode_label = isset($asset_view_modes[$settings['view_mode']]) ? $asset_view_modes[$settings['view_mode']] : $settings['view_mode'];
-    if (isset($entity_info['view modes'][$settings['view_mode']]['label'])) {
-      $view_mode_label = $entity_info['view modes'][$settings['view_mode']]['label'];
-    }
-    $summary[] = t('Rendered as @mode', array('@mode' => $view_mode_label));
+  if ($display['type'] == 'asset_image') {
+    module_load_include('inc', 'image', 'image.field');
+    $summary = t('Target field: @style', array('@style' => $settings['field_name'] ? $settings['field_name'] : 'NONE'));
+    $summary .= '<br />' . image_field_formatter_settings_summary($field, $instance, $view_mode);
+    return $summary;
   }
+
+
+  // if ($display['type'] == 'asset_entity_view') {
+  //   $entity_info = entity_get_info($field['settings']['target_type']);
+  //   $asset_view_modes = asset_view_modes();
+  //   $view_mode_label = isset($asset_view_modes[$settings['view_mode']]) ? $asset_view_modes[$settings['view_mode']] : $settings['view_mode'];
+  //   if (isset($entity_info['view modes'][$settings['view_mode']]['label'])) {
+  //     $view_mode_label = $entity_info['view modes'][$settings['view_mode']]['label'];
+  //   }
+  //   $summary[] = t('Rendered as @mode', array('@mode' => $view_mode_label));
+  // }
 
   if ($display['type'] == 'asset_text_trimmed') {
     $yes = '<i class="fa fa-check text-success"></i>';
@@ -310,6 +348,7 @@ function asset_field_formatter_prepare_view($entity_type, $entities, $field, $in
       if (is_array($item) && isset($item['target_id']) && isset($target_entities[$item['target_id']])) {
         // Replace the instance value with the term data.
         $items[$id][$delta]['entity'] = $target_entities[$item['target_id']];
+        $items[$id][$delta]['entity_type'] = $field['settings']['target_type'];
         // Check whether the user has access to the referenced entity.
         $has_view_access = (entity_access('view', $field['settings']['target_type'], $target_entities[$item['target_id']]) !== FALSE);
         $has_update_access = (entity_access('update', $field['settings']['target_type'], $target_entities[$item['target_id']]) !== FALSE);
@@ -322,6 +361,7 @@ function asset_field_formatter_prepare_view($entity_type, $entities, $field, $in
         $items[$id][$delta] = array();
         $items[$id][$delta]['target_id'] = $entity_id;
         $items[$id][$delta]['entity'] = $item;
+        $items[$id][$delta]['entity_type'] = $field['settings']['target_type'];
         // Check whether the user has access to the referenced entity.
         $has_view_access = (entity_access('view', $field['settings']['target_type'], $item) !== FALSE);
         $has_update_access = (entity_access('update', $field['settings']['target_type'], $item) !== FALSE);
@@ -349,29 +389,45 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
   $settings = $display['settings'];
 
   switch ($display['type']) {
-    case 'asset_entity_view':
-
-      // Rebuild the items list to contain only those with access.
-      foreach ($items as $key => $item) {
-        if (empty($item['access'])) {
-          unset($items[$key]);
+    case 'asset_image':
+      if($settings['field_name']){
+        foreach ($items as $delta => $item) {
+          if($item['entity_type'] == 'asset'){
+            $target_entity_type = $item['entity_type'];
+            $target_entity = $item['entity'];
+            list(, , $target_bundle) = entity_extract_ids($target_entity_type, $target_entity);
+            $target_field = field_info_field($settings['field_name']);
+            $target_instance = field_info_instance($target_entity_type, $settings['field_name'], $target_bundle);
+            $target_items = field_get_items($target_entity_type, $target_entity, $settings['field_name']);
+            module_load_include('inc', 'image', 'image.field');
+            $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+          }
         }
-      }
-      foreach ($items as $delta => $item) {
-        // Protect ourselves from recursive rendering.
-        static $depth = 0;
-        $depth++;
-        if ($depth > 20) {
-          throw new EntityReferenceRecursiveRenderingException(t('Recursive rendering detected when rendering entity @entity_type(@entity_id). Aborting rendering.', array('@entity_type' => $entity_type, '@entity_id' => $item['target_id'])));
-        }
-
-        $entity = clone $item['entity'];
-        unset($entity->content);
-        $element[$delta] = entity_view($field['settings']['target_type'], array($item['target_id'] => $entity), $settings['view_mode'], $langcode, FALSE);
-
-        $depth = 0;
       }
       break;
+    // case 'asset_entity_view':
+
+    //   // Rebuild the items list to contain only those with access.
+    //   foreach ($items as $key => $item) {
+    //     if (empty($item['access'])) {
+    //       unset($items[$key]);
+    //     }
+    //   }
+    //   foreach ($items as $delta => $item) {
+    //     // Protect ourselves from recursive rendering.
+    //     static $depth = 0;
+    //     $depth++;
+    //     if ($depth > 20) {
+    //       throw new EntityReferenceRecursiveRenderingException(t('Recursive rendering detected when rendering entity @entity_type(@entity_id). Aborting rendering.', array('@entity_type' => $entity_type, '@entity_id' => $item['target_id'])));
+    //     }
+
+    //     $entity = clone $item['entity'];
+    //     unset($entity->content);
+    //     $element[$delta] = entity_view($field['settings']['target_type'], array($item['target_id'] => $entity), $settings['view_mode'], $langcode, FALSE);
+
+    //     $depth = 0;
+    //   }
+    //   break;
     case 'asset_text_trimmed':
       $settings   = $display['settings'];
       $token_data = array($entity_type => $entity);
