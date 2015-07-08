@@ -20,7 +20,7 @@ function asset_views_default_views() {
 function asset_views_default_views_browser($asset_type){
 
   $info = field_info_instances('asset', $asset_type->type);
-  $has_image = $has_file = $has_video = FALSE;
+  $has_image = $has_file = $has_video = $has_reference = FALSE;
   foreach($info as $instance){
     $field = field_info_field($instance['field_name']);
     switch($field['type']){
