@@ -56,7 +56,13 @@ class AssetController extends EntityAPIController {
     $entity->instance_id = !empty($entity->instance_id) ? $entity->instance_id : NULL;
     if (empty($entity->name)){
       $asset_type = asset_type_load($entity->type);
-      $entity->name = t('System') . ' [' . $asset_type->name . ']';
+      if(!empty($asset_type->data['auto_title_pattern'])){
+        $pattern = trim($asset_type->data['auto_title_pattern']);
+        $entity->name = token_replace($pattern, array('asset' => $entity), array('sanitize' => FALSE, 'clear' => TRUE));
+      }
+      if (empty($entity->name)){
+        $entity->name = t('System') . ' [' . $asset_type->name . ']';
+      }
     }
     $return = parent::save($entity, $transaction);
     if($return){

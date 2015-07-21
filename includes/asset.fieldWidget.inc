@@ -40,7 +40,7 @@ function asset_field_formatter_info() {
     'asset_image' => array(
       'label' => t('ASSET | Image'),
       'field types' => array('entityreference'),
-      'settings' => array('field_name' => '', 'image_style' => '', 'image_link' => ''),
+      'settings' => array('field_name' => '', 'image_style' => '', 'image_link' => '', 'as_url' => FALSE),
     ),
     'asset_file' => array(
       'label' => t('ASSET | File'),
@@ -86,6 +86,7 @@ function asset_field_formatter_settings_form($field, $instance, $view_mode, $for
           }
         }
         if(!empty($field_names)){
+          $elid   = drupal_html_id('asset_image_as_url');
           module_load_include('inc', 'image', 'image.field');
           $element = image_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
           $element['field_name'] = array(
@@ -95,6 +96,18 @@ function asset_field_formatter_settings_form($field, $instance, $view_mode, $for
             '#required' => TRUE,
             '#options' => $field_names,
             '#weight' => -100,
+          );
+          $element['image_link']['#weight'] = 100;
+          $element['image_link']['#states'] = array(
+            'visible' => array(
+              '#' . $elid => array('checked' => FALSE),
+            ),
+          );
+          $element['as_url'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Display as URL'),
+            '#default_value' => $settings['as_url'],
+            '#id' => $elid,
           );
         }
       }
@@ -249,6 +262,9 @@ function asset_field_formatter_settings_summary($field, $instance, $view_mode) {
     module_load_include('inc', 'image', 'image.field');
     $summary = t('Target field: @style', array('@style' => $settings['field_name'] ? $settings['field_name'] : 'NONE'));
     $summary .= '<br />' . image_field_formatter_settings_summary($field, $instance, $view_mode);
+    if($settings['as_url']){
+      $summary .= '<br />' . t('As URL: !url', array('!url' => '<i class="fa fa-check text-success"></i>'));
+    }
     return $summary;
   }
 
@@ -401,6 +417,20 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
             $target_items = field_get_items($target_entity_type, $target_entity, $settings['field_name']);
             module_load_include('inc', 'image', 'image.field');
             $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+            if($settings['as_url']){
+              foreach($element[$delta] as &$e){
+                $element[$delta] = array(
+                  '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
+                );
+              }
+            }
+            if ($display['settings']['image_link'] == 'content') {
+              foreach($element[$delta] as &$e){
+                if(isset($e['#path']['path'])){
+                  $e['#path'] = entity_uri($entity_type, $entity);
+                }
+              }
+            }
           }
         }
       }

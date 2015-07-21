@@ -210,6 +210,19 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
     '#default_value' => empty($asset_type->data['auto_title']) ? 0 : $asset_type->data['auto_title'],
   );
 
+  $form['data']['auto_title_pattern'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Pattern for the title'),
+    '#description' => t('Leave blank for using the per default generated title. Otherwise this string will be used as title. Use the syntax [token] if you want to insert a replacement pattern.'),
+    '#default_value' => empty($asset_type->data['auto_title_pattern']) ? '' : $asset_type->data['auto_title_pattern'],
+    '#states' => array(
+      'visible' => array(
+        ':input[name="data[auto_title]"]' => array('checked' => TRUE),
+      ),
+    ),
+    '#field_suffix' => module_exists('token') ? theme('token_tree', array('token_types' => array('asset'), 'dialog' => TRUE)) : '',
+  );
+
   $form['data']['usage_info'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show usage info'),

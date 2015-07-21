@@ -1,15 +1,6 @@
 <?php
 
 /**
- * Implements hook_field_delete_field().
- */
-function asset_field_delete_instance($instance) {
-  // Remove usage for field instances that are being removed.
-  asset_usage_purge(array('entity_type' => $instance['entity_type'], 'bundle' => $instance['bundle'], 'field_name' => $instance['field_name']));
-  asset_usage_clear();
-}
-
-/**
  * Implements hook_field_attach_presave().
  */
 function asset_field_attach_presave($entity_type, $entity) {

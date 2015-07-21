@@ -25,6 +25,11 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     $defaults = parent::defaultSettings();
     $defaults['auto_title'] = FALSE;
     $defaults['instance_default_creation'] = FALSE;
+    if(module_exists('manualcrop')){
+      // $defaults['manualcrop'] = FALSE;
+      // $defaults['manualcrop_style'] = '';
+      $defaults += manualcrop_default_widget_settings();
+    }
     return $defaults;
   }
 
@@ -51,6 +56,29 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       '#title'         => t('Allow default instance to be created/edited'),
       '#default_value' => $this->settings['instance_default_creation'],
     );
+
+    if(module_exists('manualcrop') && $target = asset_entityreference_contains($field, 'image')){
+      module_load_include('inc', 'manualcrop', 'manualcrop.admin');
+      $manualcrop = manualcrop_field_widget_settings_form('image_image', $this->settings);
+      // // Get a list of styles.
+      // $style_options = manualcrop_styles_with_crop(FALSE, NULL, TRUE);
+
+      $form['manualcrop_enable'] = $manualcrop['manualcrop']['manualcrop_enable'];
+      $form['manualcrop_enable']['#title'] = t('Enable cropping');
+      unset($manualcrop['manualcrop']['manualcrop_enable']);
+
+      $manualcrop['manualcrop']['#collapsible'] = FALSE;
+      $manualcrop['manualcrop']['#parents'][] = 'type_settings';
+      $manualcrop['manualcrop'] += array(
+        '#states' => array(
+          'visible' => array(
+            ':input[name="instance[widget][settings][type_settings][manualcrop_enable]"]' => array('checked' => TRUE),
+          ),
+        ),
+      );
+      $form += $manualcrop;
+    }
+
     return $form;
   }
 
@@ -422,22 +450,40 @@ function _asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
  * Inline entity form widget alter.
  */
 function _asset_field_widget_inline_entity_form_form_alter(&$element, &$form_state, $context){
-  return;
   $field = $context['field'];
+  $instance = $context['instance'];
 
   // Only act on assets.
   if($field['settings']['target_type'] !== 'asset') return;
 
-  if(isset($element['actions'])){
-    $element['actions']['#attributes'] = array();
-    $element['actions']['#type'] = 'actions';
-    if(isset($element['actions']['ief_add'])){
-      $element['actions']['ief_add']['#attributes']['class'][] = 'secondary';
-      $element['actions']['ief_add']['#attributes']['class'][] = 'tiny';
-    }
-    if(isset($element['actions']['ief_add_existing'])){
-      $element['actions']['ief_add_existing']['#attributes']['class'][] = 'secondary';
-      $element['actions']['ief_add_existing']['#attributes']['class'][] = 'tiny';
+  $settings = $instance['widget']['settings']['type_settings'];
+  if(module_exists('manualcrop') && !empty($settings['manualcrop_enable']) && $target = asset_entityreference_contains($field, 'image')){
+    foreach (element_children($element['entities']) as $key) {
+      $entity = &$element['entities'][$key];
+      if(isset($entity['actions']['ief_entity_edit'])){
+        $edit = $entity['actions']['ief_entity_edit'];
+        // $wrapper = entity_metadata_wrapper('asset', $entity['#entity']);
+        $wrapper = asset_entityreference_get($entity['#entity'], $target);
+        $file = $wrapper->{$target['fieldname']}->value();
+        $entity['actions']['ief_entity_crop'] = array();
+        if(!empty($file['fid']) && empty($file['uri'])){
+          $file = file_load($file['fid']);
+        }
+        manualcrop_croptool_process($element, $form_state, $entity['actions']['ief_entity_crop'], (object) $file, $settings);
+      }
     }
   }
+
+  // if(isset($element['actions'])){
+  //   $element['actions']['#attributes'] = array();
+  //   $element['actions']['#type'] = 'actions';
+  //   if(isset($element['actions']['ief_add'])){
+  //     $element['actions']['ief_add']['#attributes']['class'][] = 'secondary';
+  //     $element['actions']['ief_add']['#attributes']['class'][] = 'tiny';
+  //   }
+  //   if(isset($element['actions']['ief_add_existing'])){
+  //     $element['actions']['ief_add_existing']['#attributes']['class'][] = 'secondary';
+  //     $element['actions']['ief_add_existing']['#attributes']['class'][] = 'tiny';
+  //   }
+  // }
 }
