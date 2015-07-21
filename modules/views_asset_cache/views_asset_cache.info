@@ -1,0 +1,15 @@
+name        = Views Asset Cache
+description = Provides a views cache plugin based on asset type changes.
+package     = Asset
+core        = 7.x
+
+dependencies[] = views
+dependencies[] = asset
+
+; Context plugins
+files[] = plugins/views_asset_cache/base.inc
+files[] = plugins/views_asset_cache/asset.inc
+
+; Views plugins
+files[] = views/views_asset_cache_plugin_cache.inc
+
