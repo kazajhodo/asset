@@ -67,7 +67,6 @@ function views_asset_cache_update_set($entity, $entity_type, $timestamp = NULL) 
       if (!empty($cid)) {
         $update = TRUE;
         $mapped = views_asset_cache_id_record($cid);
-        dsm($mapped);
 
         // Ensure that the timestamp is recorded in the table.
         $merge_query = db_merge('views_asset_cache')
