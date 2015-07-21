@@ -68,6 +68,8 @@ function asset_entity_info() {
         ),
       ),
     ),
+    // Stop the redirect modulel from acting on our assets.
+    'redirect' => FALSE,
   );
   // The entity that holds information about the entity types.
   $return['asset_type'] = array(
@@ -232,6 +234,28 @@ function asset_theme() {
     }
   }
   return $theme;
+}
+
+/**
+ * Implements hook_field_create_instance().
+ */
+function asset_field_create_instance($instance){
+  if(isset($instance['entity_type']) && $instance['entity_type'] == 'asset'){
+    // We need to clear the theme cache when a new instance is being created
+    // so that we can override it's template with field--asset-tpl.php.
+    drupal_theme_rebuild();
+  }
+}
+
+/**
+ * Implements hook_field_delete_instance().
+ */
+function asset_field_delete_instance($instance){
+  asset_field_create_instance($instance);
+
+  // Remove usage for field instances that are being removed.
+  asset_usage_purge(array('entity_type' => $instance['entity_type'], 'bundle' => $instance['bundle'], 'field_name' => $instance['field_name']));
+  asset_usage_clear();
 }
 
 /**
@@ -1216,4 +1240,54 @@ function asset_field_info_instance($entity_type, $field_name, $bundle_name) {
  */
 function asset_token_tool_load(){
   drupal_add_js(drupal_get_path('module','asset') . '/js/asset.token.js');
+}
+
+/**
+ * Determine if entityreference child contains a field of a certain type.
+ */
+function asset_entityreference_contains($field, $type){
+  $return = FALSE;
+  if ($field['type'] == 'entityreference' &&
+    $field['settings']['target_type'] == 'asset' &&
+    isset($field['settings']['handler_settings']['target_bundles']) &&
+    count($field['settings']['handler_settings']['target_bundles']) == 1){
+
+    $target_fields = array();
+    foreach(field_info_instances('asset', key($field['settings']['handler_settings']['target_bundles'])) as $target_field_name => $target_instance){
+      $target_field = field_info_field($target_field_name);
+      $target_fields[] = $target_field;
+      if ($target_field['type'] == $type) {
+        $return = array(
+          'fieldname' => $target_field_name,
+          'field' => $target_field,
+          'instance' => $target_instance,
+          'parents' => array(),
+        );
+        break;
+      }
+    }
+    if(empty($return)){
+      foreach($target_fields as $target_field){
+        if ($return = asset_entityreference_contains($target_field, $type)){
+          $return['parents'][] = $target_field['field_name'];
+          break;
+        }
+      }
+    }
+  }
+  return $return;
+}
+
+/**
+ * Get entityreference entity from results of asset_entityreference_contains().
+ */
+function asset_entityreference_get($entity, $target){
+  $wrapper = entity_metadata_wrapper('asset', $entity);
+  if(!empty($target['parents'][0])){
+    if($child_entity = $wrapper->{$target['parents'][0]}->value()){
+      array_shift($target['parents']);
+      return asset_entityreference_get($child_entity, $target);
+    }
+  }
+  return $wrapper;
 }
