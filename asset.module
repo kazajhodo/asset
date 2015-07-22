@@ -268,7 +268,7 @@ function asset_fett_icons_alter(&$icons){
     if(!empty($type->data['icon'])){
       $icons[$type->name] = $type->data['icon'];
       $icons[$type->plural] = $type->data['icon'];
-      $icons['Add ' . $type->name] = $type->data['icon'];
+      $icons['Add ' . $type->name] = 'plus';
     }
   }
 }
