@@ -30,6 +30,22 @@ function views_asset_cache_entity_insert($entity, $type) {
 function views_asset_cache_entity_update($entity, $type) {
   if($type === 'asset'){
     views_asset_cache_update_set($entity, 'asset');
+    if(($usage = asset_usage($entity->id)) && isset($usage['referenced'])){
+      foreach($usage['referenced'] as $use){
+        switch($use['entity_type']){
+          case 'asset':
+            $asset = asset_load($use['entity_id']);
+            views_asset_cache_entity_update($asset, 'asset');
+            break;
+          case 'node':
+            if(module_exists('views_content_cache')){
+              $node = node_load($use['entity_id']);
+              views_content_cache_node_update($node, 'node');
+            }
+            break;
+        }
+      }
+    }
   }
 }
 
