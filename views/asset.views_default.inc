@@ -120,12 +120,11 @@ function asset_views_default_views_browser($asset_type){
     $handler->display->display_options['fields'][$has_file]['type'] = 'file_mime_type_icon';
   }
   elseif($has_reference &&
-    $has_reference['field']['settings']['target_type'] == 'asset' &&
     isset($has_reference['field']['settings']['handler_settings']['target_bundles']) &&
     count($has_reference['field']['settings']['handler_settings']['target_bundles']) == 1){
-    foreach(field_info_instances('asset', key($has_reference['field']['settings']['handler_settings']['target_bundles'])) as $target_field_name => $target_instance){
-      $target_field = field_info_field($target_field_name);
-      if ($target_field['type'] == 'image') {
+
+    if($fields = asset_entityreference_contains($has_reference['field'], 'image')){
+      foreach($fields as $key => $data){
         $handler->display->display_options['fields'][$has_reference['field_name']]['id'] = $has_reference['field_name'];
         $handler->display->display_options['fields'][$has_reference['field_name']]['table'] = 'field_data_' . $has_reference['field_name'];
         $handler->display->display_options['fields'][$has_reference['field_name']]['field'] = $has_reference['field_name'];
@@ -133,7 +132,7 @@ function asset_views_default_views_browser($asset_type){
         // $handler->display->display_options['fields'][$has_reference['field_name']]['click_sort_column'] = 'target_id';
         $handler->display->display_options['fields'][$has_reference['field_name']]['type'] = 'asset_image';
         $handler->display->display_options['fields'][$has_reference['field_name']]['settings'] = array(
-          'field_name' => $target_field_name,
+          'field_name' => $key,
           'image_style' => 'asset-thumb',
           'image_link' => '',
         );
