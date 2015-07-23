@@ -75,41 +75,35 @@ function asset_field_formatter_settings_form($field, $instance, $view_mode, $for
     //   );
     //   break;
     case 'asset_image':
-      if(isset($field['settings']['handler_settings']['target_bundles']) && count($field['settings']['handler_settings']['target_bundles']) === 1){
-        $target_type = $field['settings']['target_type'];
-        $target_bundle = key($field['settings']['handler_settings']['target_bundles']);
+      if($fields = asset_entityreference_contains($field, 'image')){
         $field_names = array();
-        foreach (field_info_instances($target_type, $target_bundle) as $target_field_name => $target_instance) {
-          $target_field = field_info_field($target_field_name);
-          if ($target_field['type'] == 'image') {
-            $field_names[$target_field['field_name']] = $target_instance['label'] . ' [' . $target_field['field_name'] . ']';
-          }
+        foreach($fields as $key => $target){
+          $target['parents'][] = $target['field_name'];
+          $field_names[$key] = $target['instance']['label'] . ' [' . implode($target['parents'], ' > ') . ']';
         }
-        if(!empty($field_names)){
-          $elid   = drupal_html_id('asset_image_as_url');
-          module_load_include('inc', 'image', 'image.field');
-          $element = image_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
-          $element['field_name'] = array(
-            '#title' => t('Target image field'),
-            '#type' => 'select',
-            '#default_value' => $settings['field_name'],
-            '#required' => TRUE,
-            '#options' => $field_names,
-            '#weight' => -100,
-          );
-          $element['image_link']['#weight'] = 100;
-          $element['image_link']['#states'] = array(
-            'visible' => array(
-              '#' . $elid => array('checked' => FALSE),
-            ),
-          );
-          $element['as_url'] = array(
-            '#type' => 'checkbox',
-            '#title' => t('Display as URL'),
-            '#default_value' => $settings['as_url'],
-            '#id' => $elid,
-          );
-        }
+        $elid   = drupal_html_id('asset_image_as_url');
+        module_load_include('inc', 'image', 'image.field');
+        $element = image_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
+        $element['field_name'] = array(
+          '#title' => t('Target image field'),
+          '#type' => 'select',
+          '#default_value' => $settings['field_name'],
+          '#required' => TRUE,
+          '#options' => $field_names,
+          '#weight' => -100,
+        );
+        $element['image_link']['#weight'] = 100;
+        $element['image_link']['#states'] = array(
+          'visible' => array(
+            '#' . $elid => array('checked' => FALSE),
+          ),
+        );
+        $element['as_url'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Display as URL'),
+          '#default_value' => $settings['as_url'],
+          '#id' => $elid,
+        );
       }
       break;
     case 'asset_text_trimmed':
@@ -260,7 +254,13 @@ function asset_field_formatter_settings_summary($field, $instance, $view_mode) {
 
   if ($display['type'] == 'asset_image') {
     module_load_include('inc', 'image', 'image.field');
-    $summary = t('Target field: @style', array('@style' => $settings['field_name'] ? $settings['field_name'] : 'NONE'));
+    $label = 'NONE';
+    if(($settings['field_name'] && $fields = asset_entityreference_contains($field, 'image')) && isset($fields[$settings['field_name']])){
+      $target = $fields[$settings['field_name']];
+      $target['parents'][] = $target['field_name'];
+      $label = implode($target['parents'], ' > ');
+    }
+    $summary = t('Target field: @field', array('@field' => $label));
     $summary .= '<br />' . image_field_formatter_settings_summary($field, $instance, $view_mode);
     if($settings['as_url']){
       $summary .= '<br />' . t('As URL: !url', array('!url' => '<i class="fa fa-check text-success"></i>'));
@@ -406,29 +406,31 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
 
   switch ($display['type']) {
     case 'asset_image':
-      if($settings['field_name']){
+      if(($settings['field_name'] && $fields = asset_entityreference_contains($field, 'image')) && isset($fields[$settings['field_name']])){
+        $target = $fields[$settings['field_name']];
+        $target_field = $target['field'];
+        $target_instance = $target['instance'];
         foreach ($items as $delta => $item) {
-          if($item['entity_type'] == 'asset'){
-            $target_entity_type = $item['entity_type'];
-            $target_entity = $item['entity'];
-            list(, , $target_bundle) = entity_extract_ids($target_entity_type, $target_entity);
-            $target_field = field_info_field($settings['field_name']);
-            $target_instance = field_info_instance($target_entity_type, $settings['field_name'], $target_bundle);
-            $target_items = field_get_items($target_entity_type, $target_entity, $settings['field_name']);
-            module_load_include('inc', 'image', 'image.field');
-            $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
-            if($settings['as_url']){
-              foreach($element[$delta] as &$e){
-                $element[$delta] = array(
-                  '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
-                );
-              }
+          $target_entity_wrapper = asset_entityreference_get($entity_type, $entity, $target);
+          $target_entity_type = $target_entity_wrapper->type();
+          $target_entity = $target_entity_wrapper->value();
+          // $target_entity_type = $item['entity_type'];
+          // $target_entity = $item['entity'];
+          // list(, , $target_bundle) = entity_extract_ids($target_entity_type, $target_entity);
+          $target_items = field_get_items($target_entity_type, $target_entity, $target['field_name']);
+          module_load_include('inc', 'image', 'image.field');
+          $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+          if($settings['as_url']){
+            foreach($element[$delta] as &$e){
+              $element[$delta] = array(
+                '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
+              );
             }
-            if ($display['settings']['image_link'] == 'content') {
-              foreach($element[$delta] as &$e){
-                if(isset($e['#path']['path'])){
-                  $e['#path'] = entity_uri($entity_type, $entity);
-                }
+          }
+          if ($display['settings']['image_link'] == 'content') {
+            foreach($element[$delta] as &$e){
+              if(isset($e['#path']['path'])){
+                $e['#path'] = entity_uri($entity_type, $entity);
               }
             }
           }

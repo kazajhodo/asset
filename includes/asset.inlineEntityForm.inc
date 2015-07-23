@@ -26,9 +26,14 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     $defaults['auto_title'] = FALSE;
     $defaults['instance_default_creation'] = FALSE;
     if(module_exists('manualcrop')){
-      // $defaults['manualcrop'] = FALSE;
-      // $defaults['manualcrop_style'] = '';
-      $defaults += manualcrop_default_widget_settings();
+      $field = field_info_field(arg(6));
+      if($fields = asset_entityreference_contains($field, 'image')){
+        $defaults['manualcrop'] = array();
+        foreach($fields as $key => $field){
+          $defaults['manualcrop'][$key]['manualcrop_enable'] = 0;
+          $defaults['manualcrop'][$key]['manualcrop'] = manualcrop_default_widget_settings();
+        }
+      }
     }
     return $defaults;
   }
@@ -56,27 +61,46 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       '#title'         => t('Allow default instance to be created/edited'),
       '#default_value' => $this->settings['instance_default_creation'],
     );
-
-    if(module_exists('manualcrop') && $target = asset_entityreference_contains($field, 'image')){
+    if(module_exists('manualcrop') && $targets = asset_entityreference_contains($field, 'image')){
       module_load_include('inc', 'manualcrop', 'manualcrop.admin');
-      $manualcrop = manualcrop_field_widget_settings_form('image_image', $this->settings);
-      // // Get a list of styles.
-      // $style_options = manualcrop_styles_with_crop(FALSE, NULL, TRUE);
 
-      $form['manualcrop_enable'] = $manualcrop['manualcrop']['manualcrop_enable'];
-      $form['manualcrop_enable']['#title'] = t('Enable cropping');
-      unset($manualcrop['manualcrop']['manualcrop_enable']);
-
-      $manualcrop['manualcrop']['#collapsible'] = FALSE;
-      $manualcrop['manualcrop']['#parents'][] = 'type_settings';
-      $manualcrop['manualcrop'] += array(
-        '#states' => array(
-          'visible' => array(
-            ':input[name="instance[widget][settings][type_settings][manualcrop_enable]"]' => array('checked' => TRUE),
-          ),
-        ),
+      $form['manualcrop'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Manual Crop'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#tree' => TRUE,
+        '#element_validate' => array('asset_inline_entity_manualcrop_validate'),
       );
-      $form += $manualcrop;
+
+      foreach($targets as $key => $target){
+        $label = $target['instance']['label'] . ' [' . implode($target['parents'], ' > ') . ']';
+        $manualcrop = manualcrop_field_widget_settings_form('image_image', $this->settings['manualcrop'][$key]['manualcrop']);
+        unset($manualcrop['manualcrop']['#parents']);
+
+        if($this->settings['manualcrop'][$key]['manualcrop_enable']){
+          $form['manualcrop']['#collapsed'] = FALSE;
+        }
+
+        $form['manualcrop'][$key]['manualcrop_enable'] = $manualcrop['manualcrop']['manualcrop_enable'];
+        $form['manualcrop'][$key]['manualcrop_enable']['#title'] = t('Enable cropping for %field_name', array('%field_name' => $label));
+        unset($manualcrop['manualcrop']['manualcrop_enable']);
+
+        $manualcrop['manualcrop']['#title'] = t('Crop settings for %field_name', array('%field_name' => $label));
+        $manualcrop['manualcrop']['manualcrop_enable'] = array(
+          '#type' => 'value',
+          '#value' => 1,
+        );
+        $manualcrop['manualcrop'] += array(
+          '#states' => array(
+            'visible' => array(
+              ':input[name="instance[widget][settings][type_settings][manualcrop]['.$key.'][manualcrop_enable]"]' => array('checked' => TRUE),
+            ),
+          ),
+        );
+
+        $form['manualcrop'][$key] += $manualcrop;
+      }
     }
 
     return $form;
@@ -204,14 +228,9 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       }
 
       // If the entity has a entityreference that contains an image field.
-      if ($field['type'] == 'entityreference' &&
-        $field['settings']['target_type'] == 'asset' &&
-        isset($field['settings']['handler_settings']['target_bundles']) &&
-        count($field['settings']['handler_settings']['target_bundles']) == 1){
-
-        foreach(field_info_instances('asset', key($field['settings']['handler_settings']['target_bundles'])) as $target_field_name => $target_instance){
-          $target_field = field_info_field($target_field_name);
-          if ($target_field['type'] == 'image') {
+      if ($field['type'] == 'entityreference'){
+        if($targets = asset_entityreference_contains($field, 'image')){
+          foreach($targets as $key => $target){
             // Determine the correct image style to use.
             $image_style = 'thumbnail';
             if (!empty($target_instance['widget']['settings']['preview_image_style'])) {
@@ -219,9 +238,9 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
             }
             $fields[$field_name] = array(
               'type' => 'field',
-              'label' => $target_instance['label'],
+              'label' => $target['instance']['label'],
               'formatter' => 'asset_image',
-              'settings' => array('field_name' => $target_field_name, 'image_style' => $image_style),
+              'settings' => array('field_name' => $key, 'image_style' => $image_style),
               'delta' => 0,
               'weight' => -10,
             );
@@ -456,22 +475,43 @@ function _asset_field_widget_inline_entity_form_form_alter(&$element, &$form_sta
   // Only act on assets.
   if($field['settings']['target_type'] !== 'asset') return;
 
+  $entity_type = $field['settings']['target_type'];
   $settings = $instance['widget']['settings']['type_settings'];
-  if(module_exists('manualcrop') && !empty($settings['manualcrop_enable']) && $target = asset_entityreference_contains($field, 'image')){
-    foreach (element_children($element['entities']) as $key) {
-      $entity = &$element['entities'][$key];
-      if(isset($entity['actions']['ief_entity_edit'])){
-        $edit = $entity['actions']['ief_entity_edit'];
-        // $wrapper = entity_metadata_wrapper('asset', $entity['#entity']);
-        $wrapper = asset_entityreference_get($entity['#entity'], $target);
-        $file = $wrapper->{$target['fieldname']}->value();
-        $entity['actions']['ief_entity_crop'] = array();
-        if(!empty($file['fid']) && empty($file['uri'])){
-          $file = file_load($file['fid']);
+  if(module_exists('manualcrop') && !empty($settings['manualcrop']) && $targets = asset_entityreference_contains($field, 'image')){
+    foreach($targets as $key => $target){
+      // Check to make sure this target is enabled for cropping
+      if(!isset($settings['manualcrop'][$key])){
+        continue;
+      }
+      // We remove the first parent element since we will be providing the child entity.
+      array_shift($target['parents']);
+      foreach (element_children($element['entities']) as $i) {
+        $row = &$element['entities'][$i];
+        if(isset($row['actions']['ief_entity_edit'])){
+          $edit = $row['actions']['ief_entity_edit'];
+          $wrapper = asset_entityreference_get($entity_type, $row['#entity'], $target);
+          $file = $wrapper->{$target['field_name']}->value();
+          $row['actions']['ief_entity_crop_' . $key] = array();
+          if(!empty($file['fid']) && empty($file['uri'])){
+            $file = file_load($file['fid']);
+          }
+          manualcrop_croptool_process($element, $form_state, $row['actions']['ief_entity_crop_' . $key], (object) $file, $settings['manualcrop'][$key]['manualcrop']);
         }
-        manualcrop_croptool_process($element, $form_state, $entity['actions']['ief_entity_crop'], (object) $file, $settings);
       }
     }
+  //   foreach (element_children($element['entities']) as $key) {
+  //     $entity = &$element['entities'][$key];
+  //     if(isset($entity['actions']['ief_entity_edit'])){
+  //       $edit = $entity['actions']['ief_entity_edit'];
+  //       $wrapper = asset_entityreference_get($entity['#entity'], $target);
+  //       $file = $wrapper->{$target['field_name']}->value();
+  //       $entity['actions']['ief_entity_crop'] = array();
+  //       if(!empty($file['fid']) && empty($file['uri'])){
+  //         $file = file_load($file['fid']);
+  //       }
+  //       manualcrop_croptool_process($element, $form_state, $entity['actions']['ief_entity_crop'], (object) $file, $settings);
+  //     }
+  //   }
   }
 
   // if(isset($element['actions'])){
