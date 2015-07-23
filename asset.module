@@ -1268,9 +1268,7 @@ function asset_entity_contains($entity_type, $bundle, $type){
   foreach (field_info_instances($entity_type, $bundle) as $field_name => $instance) {
     $field = field_info_field($field_name);
     dsm($field);
-    if($found = asset_entityreference_contains($field, $type)){
-      dsm($found);
-    }
+    $fields += asset_entityreference_contains($field, $type);
   }
   return $fields;
 }
