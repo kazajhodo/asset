@@ -1,0 +1,48 @@
+.asset-usage{
+  clear:both;
+  padding-top:10px;
+}
+
+.asset-usage .fieldset-wrapper{
+  padding-top:0;
+}
+
+.asset-usage.asset-usage-instance{
+  border-color: #f4f4f4;
+  background:#fff;
+}
+
+.asset-usage dl,
+.asset-usage dd{
+  margin:0;
+}
+
+.asset-usage dl{
+  font-size:12px;
+}
+
+.asset-usage .asset-usage-totals .label{
+  display:block;
+}
+
+.asset-usage .asset-usage-referenced{
+  padding-top:10px;
+}
+
+.asset-usage .asset-usage-list{
+  padding-top:10px;
+}
+
+.asset-usage .asset-usage-list a{
+  font-size:11px;
+}
+
+.asset-usage .asset-usage-list ul{
+  margin:0;
+  padding:0;
+}
+
+.asset-usage .asset-usage-list li{
+  margin:0;
+  padding:0;
+}

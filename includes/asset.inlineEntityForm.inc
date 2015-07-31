@@ -278,12 +278,12 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         if(!empty($asset_type->data['usage_info'])){
           $entity_form['notice'] = array(
             '#markup' => '<div class="alert-box warning">Editing this '.strtolower($asset_type->name).' asset will impact all other areas where this asset is used.</div>',
-            '#weight' => -7,
+            '#weight' => 6,
           );
           $entity_form['usage'] = array(
             '#theme' => 'asset_usage',
             '#usage' => $usage,
-            '#weight' => -6,
+            '#weight' => 7,
           );
           $remove_form['usage']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
         }

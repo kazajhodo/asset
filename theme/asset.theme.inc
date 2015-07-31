@@ -127,6 +127,9 @@ function theme_asset_usage($vars){
   $usage = $vars['usage'];
   $output = '<div class="asset-usage">';
 
+  // Replace with #attached
+  drupal_add_css(drupal_get_path('module', 'asset') . '/css/asset.usage.css');
+
   $output .= '<div class="row asset-usage-totals">';
   $output .= '<div class="medium-4 columns">';
   $output .= '<dl>';
@@ -176,7 +179,9 @@ function theme_asset_usage($vars){
   }
 
   $output .= '</div>';
-  return theme('fieldset', array('element' => array('#title' => t('Usage'), '#children' => $output, '#attributes' => array('class' => array('asset-usage')))));
+
+  drupal_add_library('system', 'drupal.collapse');
+  return theme('fieldset', array('element' => array('#title' => t('Asset Usage') . ' ('.$total.')', '#children' => $output, '#collapsible' => TRUE, '#collapsed' => TRUE, '#attributes' => array('class' => array('asset-usage', 'collapsible', 'collapsed')))));
 }
 
 function theme_asset_usage_instance($vars){
