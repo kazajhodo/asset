@@ -46,16 +46,18 @@ class asset_handler_creation_field extends views_handler_field {
         if(isset($types[$type])){
           $node_type = $types[$type];
           $link = menu_get_item('node/add/' . $node_type->type);
-          $link['title'] = 'Add ' . $link['title'];
-          $link['localized_options']['query'] = drupal_get_destination();
-          if(function_exists('boushh_action_links_add')){
-            boushh_action_links_add($link);
-          }
-          else{
-            $bar['right'][] = array(
-              '#theme' => 'menu_local_action__ops',
-              '#link' => $link
-            );
+          if($link && $link['access']){
+            $link['title'] = 'Add ' . $link['title'];
+            $link['localized_options']['query'] = drupal_get_destination();
+            if(function_exists('boushh_action_links_add')){
+              boushh_action_links_add($link);
+            }
+            else{
+              $bar['right'][] = array(
+                '#theme' => 'menu_local_action__ops',
+                '#link' => $link
+              );
+            }
           }
         }
       }
