@@ -495,6 +495,7 @@ function _asset_field_widget_inline_entity_form_form_alter(&$element, &$form_sta
           if(!empty($file['fid']) && empty($file['uri'])){
             $file = file_load($file['fid']);
           }
+          $element['#build_id'] = 'asset_ief_manualcrop';
           manualcrop_croptool_process($element, $form_state, $row['actions']['ief_entity_crop_' . $key], (object) $file, $settings['manualcrop'][$key]['manualcrop']);
         }
       }
