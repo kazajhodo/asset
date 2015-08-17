@@ -226,10 +226,10 @@ function asset_schema() {
 function asset_update_7001(&$sandbox) {
   $schema = asset_schema();
   if (!db_field_exists('asset', 'title')) {
-    db_change_field('asset', 'name', 'title', $schema['asset']['fields']['name']);
+    db_change_field('asset', 'name', 'title', $schema['asset']['fields']['title']);
   }
   if (!db_field_exists('asset_type', 'title')) {
-    db_change_field('asset_type', 'name', 'title', $schema['asset_type']['fields']['name']);
+    db_change_field('asset_type', 'name', 'title', $schema['asset_type']['fields']['title']);
   }
 }
 
