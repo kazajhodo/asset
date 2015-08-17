@@ -160,14 +160,14 @@ class AssetTypeUIController extends EntityDefaultUIController {
 function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
 
   if ($op == 'clone') {
-    $asset_type->name .= ' (cloned)';
+    $asset_type->title .= ' (cloned)';
     $asset_type->type = '';
   }
 
-  $form['name'] = array(
+  $form['title'] = array(
     '#title' => t('Label'),
     '#type' => 'textfield',
-    '#default_value' => $asset_type->name,
+    '#default_value' => $asset_type->title,
     '#description' => t('The human-readable name of this asset type.'),
     '#required' => TRUE,
     '#size' => 30,
@@ -175,12 +175,12 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
   // Machine-readable type name.
   $form['type'] = array(
     '#type' => 'machine_name',
-    '#default_value' => isset($asset_type->type) ? $asset_type->type : '',
+    '#default_value' => $asset_type->type,
     '#maxlength' => 32,
 //    '#disabled' => $asset_type->isLocked() && $op != 'clone',
     '#machine_name' => array(
       'exists' => 'asset_get_types',
-      'source' => array('name'),
+      'source' => array('title'),
     ),
     '#description' => t('A unique machine-readable name for this asset type. It must only contain lowercase letters, numbers, and underscores.'),
   );
@@ -188,7 +188,7 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
   $form['plural'] = array(
     '#title' => t('Plural'),
     '#type' => 'textfield',
-    '#default_value' => empty($asset_type->plural) ? '' : $asset_type->plural,
+    '#default_value' => $asset_type->plural,
     '#description' => t('The human-readable plural name of this asset type.'),
     '#required' => TRUE,
     '#size' => 30,
@@ -196,25 +196,50 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
 
   $form['data']['#tree'] = TRUE;
 
+  // Backwards compatability with older version of Font Awesome
+  if(function_exists('fawesome_element_info')){
+    $form['data']['icon'] = array(
+      '#type' => 'fawesome_select',
+      '#title' => t('Icon'),
+      '#required' => TRUE,
+      '#default_value' => $asset_type->data['icon'],
+      '#attributes' => array('class'=>array('clearfix', 'field-inline')),
+    );
+  }
+  else{
+    $options = array();
+    foreach(fawesome_list() as $icon){
+      $options[$icon] = '<i class="fa fa-'.$icon.'"></i>';
+    }
+    $form['data']['icon'] = array(
+      '#type' => 'radios',
+      '#title' => t('Icon'),
+      '#options' => $options,
+      '#required' => TRUE,
+      '#default_value' => $asset_type->data['icon'],
+      '#attributes' => array('class'=>array('clearfix', 'field-inline')),
+    );
+  }
+
   $form['data']['path'] = array(
     '#type' => 'textfield',
     '#title' => t('Custom URL path'),
     '#description' => t('Will change the view/edit/delete url for an asset. Example: media/image. Defaults to: !view !edit !delete.', array('!view' => '<code>VIEW asset/:asset</code>', '!edit' => '<code>EDIT admin/content/assets/:asset/edit</code>', '!delete' => '<code>DELETE admin/content/assets/:asset/edit</code>')),
-    '#default_value' => empty($asset_type->data['path']) ? '' : $asset_type->data['path'],
+    '#default_value' => $asset_type->data['path'],
   );
 
   $form['data']['auto_title'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide the title field'),
     '#description' => t('Do not allow the title field to be edited. The title will be automatically generated.'),
-    '#default_value' => empty($asset_type->data['auto_title']) ? 0 : $asset_type->data['auto_title'],
+    '#default_value' => $asset_type->data['auto_title'],
   );
 
   $form['data']['auto_title_pattern'] = array(
     '#type' => 'textfield',
     '#title' => t('Pattern for the title'),
     '#description' => t('Leave blank for using the per default generated title. Otherwise this string will be used as title. Use the syntax [token] if you want to insert a replacement pattern.'),
-    '#default_value' => empty($asset_type->data['auto_title_pattern']) ? '' : $asset_type->data['auto_title_pattern'],
+    '#default_value' => $asset_type->data['auto_title_pattern'],
     '#states' => array(
       'visible' => array(
         ':input[name="data[auto_title]"]' => array('checked' => TRUE),
@@ -223,52 +248,53 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
     '#field_suffix' => module_exists('token') ? theme('token_tree', array('token_types' => array('asset'), 'dialog' => TRUE)) : '',
   );
 
+  $form['data']['render_title'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Render the title field'),
+    '#default_value' => $asset_type->data['render_title'],
+    '#description' => t('Render the title field when displaying this entity.') . '<br><small>' . t('This can be overwritten in hook_preprocess_asset(), asset--[asset-type].tpl.php or asset--[asset-type]--[display-mode].tpl.php.') . '</small>',
+  );
+
+  $form['data']['allow_status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow unpublishing'),
+    '#description' => t('Will allow assets to be published/unpublished. If disabled, assets will always be published.'),
+    '#default_value' => $asset_type->data['allow_status'],
+  );
+
   $form['data']['usage_info'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show usage info'),
     '#description' => t('Show asset usage information on the asset view page and delete confirmation page.'),
-    '#default_value' => empty($asset_type->data['usage_info']) ? 0 : $asset_type->data['usage_info'],
+    '#default_value' => $asset_type->data['usage_info'],
   );
 
   $form['data']['instance_info'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show instance info'),
     '#description' => t('Show asset instance information on the asset view page.'),
-    '#default_value' => empty($asset_type->data['instance_info']) ? 0 : $asset_type->data['instance_info'],
+    '#default_value' => $asset_type->data['instance_info'],
   );
 
   $form['data']['purge'] = array(
     '#type' => 'checkbox',
     '#title' => t('Remove when not used'),
     '#description' => t('Automatically purge assets of this type when they are not used anywhere in the site.'),
-    '#default_value' => empty($asset_type->data['purge']) ? 0 : $asset_type->data['purge'],
+    '#default_value' => $asset_type->data['purge'],
   );
 
   $form['data']['no_multiple'] = array(
     '#type' => 'checkbox',
     '#title' => t('Prevent multiple use'),
     '#description' => t('Do not allow assets of this type to be re-used. This will prevent using a single asset of this type in different places.'),
-    '#default_value' => empty($asset_type->data['no_multiple']) ? 0 : $asset_type->data['no_multiple'],
+    '#default_value' => $asset_type->data['no_multiple'],
   );
 
   $form['data']['require_instance'] = array(
     '#type' => 'checkbox',
     '#title' => t('Require instance'),
     '#description' => t('This will require an instance to be created when creating an asset.'),
-    '#default_value' => empty($asset_type->data['require_instance']) ? 0 : $asset_type->data['require_instance'],
-  );
-
-  $options = array();
-  foreach(fawesome_list() as $icon){
-    $options[$icon] = '<i class="fa fa-'.$icon.'"></i>';
-  }
-  $form['data']['icon'] = array(
-    '#type' => 'radios',
-    '#title' => t('Toolbar Icon'),
-    '#options' => $options,
-    '#required' => TRUE,
-    '#default_value' => empty($asset_type->data['icon']) ? array() : $asset_type->data['icon'],
-    '#attributes' => array('class'=>array('clearfix', 'field-inline')),
+    '#default_value' => $asset_type->data['require_instance'],
   );
 
   // Add widget configuration.
@@ -301,6 +327,7 @@ function asset_type_form_submit(&$form, &$form_state) {
   views_invalidate_cache();
   $asset_type = entity_ui_form_submit_build_entity($form, $form_state);
   $asset_type->save();
+  drupal_flush_all_caches();
   $form_state['redirect'] = 'admin/structure/assets';
 }
 

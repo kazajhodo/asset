@@ -26,11 +26,12 @@ class AssetController extends EntityAPIController {
     $values += array(
       'id'          => '',
       'is_new'      => TRUE,
-      'name'        => '',
+      'title'        => '',
       'uid'         => $user->uid,
       'created'     => '',
       'changed'     => '',
       'instance_id' => NULL,
+      'status'      => 1,
       'data'        => '',
     );
 
@@ -38,6 +39,22 @@ class AssetController extends EntityAPIController {
     $asset->instance = asset_instance_create($asset);
 
     return $asset;
+  }
+
+  /**
+   * Dymically set the title if needed.
+   */
+  public function setTitle($entity){
+    $asset_type = asset_type_load($entity->type);
+    if(!empty($asset_type->data['auto_title_pattern'])){
+      $pattern = trim($asset_type->data['auto_title_pattern']);
+      $entity->title = token_replace($pattern, array('asset' => $entity), array('sanitize' => FALSE, 'clear' => TRUE));
+      $entity->title = str_replace('&times;', 'x', $entity->title);
+      $entity->title = trim(preg_replace('/ +/', ' ', preg_replace('/[^A-Za-z0-9 !@#$%^&*().]/', ' ', urldecode(html_entity_decode(strip_tags($entity->title))))));;
+    }
+    if (empty($entity->title)){
+      $entity->title = t('System') . ' [' . $asset_type->title . ']';
+    }
   }
 
   /**
@@ -54,16 +71,10 @@ class AssetController extends EntityAPIController {
     }
     $entity->changed = time();
     $entity->instance_id = !empty($entity->instance_id) ? $entity->instance_id : NULL;
-    if (empty($entity->name)){
-      $asset_type = asset_type_load($entity->type);
-      if(!empty($asset_type->data['auto_title_pattern'])){
-        $pattern = trim($asset_type->data['auto_title_pattern']);
-        $entity->name = token_replace($pattern, array('asset' => $entity), array('sanitize' => FALSE, 'clear' => TRUE));
-      }
-      if (empty($entity->name)){
-        $entity->name = t('System') . ' [' . $asset_type->name . ']';
-      }
-    }
+
+    // Set the title if none is supplied.
+    $this->setTitle($entity);
+
     $return = parent::save($entity, $transaction);
     if($return){
       if(isset($entity->instance) && isset($entity->instance_form)){

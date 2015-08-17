@@ -15,6 +15,7 @@ class AssetUIController extends EntityDefaultUIController {
     $id_count = count(explode('/', $this->path));
     $wildcard = isset($this->entityInfo['admin ui']['menu wildcard']) ? $this->entityInfo['admin ui']['menu wildcard'] : '%' . $this->entityType;
 
+
     $items[$this->path] = array(
       'title' => 'Assets',
       'description' => 'Add edit and update assets.',
@@ -81,7 +82,7 @@ class AssetUIController extends EntityDefaultUIController {
     // Add menu items to add each different type of entity.
     foreach (asset_get_types() as $type) {
       $items[$this->path . '/add/' . $type->type] = array(
-        'title' => 'Add ' . $type->name,
+        'title' => 'Add ' . $type->title,
         'page callback' => 'asset_form_wrapper',
         'page arguments' => array($type->type),
         'access callback' => 'asset_access',
@@ -92,21 +93,35 @@ class AssetUIController extends EntityDefaultUIController {
       if(!empty($type->data['path'])){
         $custom_id_count = count(explode('/', $type->data['path']));
 
+        $exists = db_query("SELECT COUNT(mlid) AS count FROM {menu_links} WHERE link_path = :path", array(':path' => $type->data['path']))->fetchField();
+        $path_type = $exists ? MENU_NORMAL_ITEM : MENU_CALLBACK;
+
+        // Custom Add
+        $items[$type->data['path'] . '/add'] = array(
+          'title' => 'Add ' . $type->title,
+          'page callback' => 'asset_form_wrapper',
+          'page arguments' => array($type->type),
+          'access callback' => 'asset_access',
+          'access arguments' => array('edit', $type->type),
+          'file' => 'asset.admin.inc',
+          'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+          'type' => $path_type,
+        );
         // Custom View
         $items[$type->data['path'] . '/' . $wildcard] = array(
           'title arguments' => array($custom_id_count),
           'page arguments' => array($custom_id_count),
           'access arguments' => array('view', $custom_id_count),
-          'type' => MENU_NORMAL_ITEM,
+          'type' => $path_type,
         ) + $view_base;
         $items[$type->data['path'] . '/' . $wildcard . '/view'] = array(
-          'title' => 'View ' . $type->name,
+          'title' => 'View',
           'type' => MENU_DEFAULT_LOCAL_TASK,
           'weight' => -10,
         );
         // Custom Edit
         $items[$type->data['path'] . '/' . $wildcard . '/edit'] = array(
-          'title' => 'Edit ' . $type->name,
+          'title' => 'Edit',
           'title callback' => '',
           'title arguments' => array($custom_id_count),
           'page arguments' => array($custom_id_count),
@@ -116,7 +131,7 @@ class AssetUIController extends EntityDefaultUIController {
         ) + $edit_base;
         // Custom Delete
         $items[$type->data['path'] . '/' . $wildcard . '/delete'] = array(
-          'title' => 'Delete ' . $type->name,
+          'title' => 'Delete',
           'page arguments' => array('asset_delete_form', $custom_id_count, $custom_id_count + 1),
           'access arguments' => array('delete', $custom_id_count),
           'weight' => 100,
@@ -217,7 +232,7 @@ class AssetUIController extends EntityDefaultUIController {
  * Title for management pages.
  */
 function asset_form_title(Asset $asset, $op = 'edit'){
-  $title = '<em>' . ucfirst($op) . '</em> ' . $asset->name;
+  $title = '<em>' . ucfirst($op) . '</em> ' . $asset->title;
   return function_exists('fett_preprocess') ? $title : strip_tags($title);
 }
 
@@ -248,7 +263,7 @@ function asset_form_wrapper($asset) {
   }
 
   // Add the breadcrumb for the form's location.
-  asset_set_breadcrumb();
+  // asset_set_breadcrumb();
   return drupal_get_form('asset_edit_form', $asset);
 }
 
@@ -267,13 +282,23 @@ function asset_edit_form($form, &$form_state, $asset) {
 
   // Add the default field elements.
   if(empty($asset_type->data['auto_title'])){
-    $form['name'] = array(
+    $form['title'] = array(
       '#type'          => 'textfield',
-      '#title'         => t($asset_type->name . ' Name'),
-      '#default_value' => isset($asset->name) ? $asset->name : '',
+      '#title'         => t($asset_type->title . ' Name'),
+      '#default_value' => isset($asset->title) ? $asset->title : '',
       '#maxlength'     => 255,
       '#required'      => TRUE,
       '#weight'        => -5,
+    );
+  }
+
+  // Add the ability to publish/unpublish.
+  if($asset_type->data['allow_status']){
+    $form['status'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Published'),
+      '#default_value' => $asset->status,
+      '#weight'        => 100,
     );
   }
 
@@ -335,7 +360,7 @@ function asset_edit_form($form, &$form_state, $asset) {
 
   $form['actions']['submit'] = array(
     '#type'   => 'submit',
-    '#value'  => t('Save') . ' ' . $asset_type->name,
+    '#value'  => t('Save') . ' ' . $asset_type->title,
     '#submit' => $submit + array('asset_edit_form_submit'),
   );
 
@@ -403,7 +428,7 @@ function asset_delete_form($form, &$form_state, $asset) {
     if(!empty($asset_type->data['usage_info'])){
       $form['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
 
-      $message = '<div class="alert-box alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset will remove it from anywhere it is used.').'</div>';
+      $message = '<div class="alert-box messages alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset will remove it from anywhere it is used.').'</div>';
 
       $form['usage'] = array(
         '#theme' => 'asset_usage',
@@ -414,7 +439,7 @@ function asset_delete_form($form, &$form_state, $asset) {
   }
 
   $form = confirm_form($form,
-    t('Are you sure you want to delete asset %name?', array('%name' => $asset->name)),
+    t('Are you sure you want to delete asset %name?', array('%name' => $asset->title)),
     'admin/content/assets/asset',
     $message,
     t('Delete'),
@@ -433,8 +458,8 @@ function asset_delete_form($form, &$form_state, $asset) {
 function asset_delete_form_submit($form, &$form_state) {
   $asset = $form_state['asset'];
   $asset->delete();
-  drupal_set_message(t('The asset %name has been deleted.', array('%name' => $asset->name)));
-  watchdog('asset', 'Deleted asset %name.', array('%name' => $asset->name));
+  drupal_set_message(t('The asset %name has been deleted.', array('%name' => $asset->title)));
+  watchdog('asset', 'Deleted asset %name.', array('%name' => $asset->title));
 
   $form_state['redirect'] = user_access('administer assets') ? 'admin/content/assets' : '<front>';
 }

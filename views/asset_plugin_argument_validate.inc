@@ -23,7 +23,7 @@ class asset_plugin_argument_validate extends views_plugin_argument_validate {
     $types = asset_get_types();
     $options = array();
     foreach ($types as $type => $info) {
-      $options[$type] = check_plain(t($info->name));
+      $options[$type] = check_plain(t($info->title));
     }
 
     $form['types'] = array(
@@ -92,7 +92,7 @@ class asset_plugin_argument_validate extends views_plugin_argument_validate {
         }
 
         // Save the name() handlers some work.
-        $this->argument->validated_title = check_plain($asset->name);
+        $this->argument->validated_title = check_plain($asset->title);
 
         if (empty($types)) {
           return TRUE;
@@ -123,7 +123,7 @@ class asset_plugin_argument_validate extends views_plugin_argument_validate {
             }
           }
 
-          $names[] = check_plain($asset->name);
+          $names[] = check_plain($asset->title);
           unset($test[$asset->id]);
         }
 

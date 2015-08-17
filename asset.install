@@ -35,7 +35,7 @@ function asset_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
-      'name' => array(
+      'title' => array(
         'description' => 'The name of the asset - a human-readable identifier.',
         'type' => 'varchar',
         'length' => 255,
@@ -61,6 +61,12 @@ function asset_schema() {
         'not null' => FALSE,
         'default' => NULL,
       ),
+      'status' => array(
+        'description' => 'Boolean indicating whether the asset is published (visible to non-administrators).',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
       'data' => array(
         'type' => 'blob',
         'not null' => FALSE,
@@ -85,7 +91,7 @@ function asset_schema() {
         'length' => 255,
         'not null' => TRUE,
       ),
-      'name' => array(
+      'title' => array(
         'description' => 'The human-readable name of this type.',
         'type' => 'varchar',
         'length' => 255,
@@ -212,4 +218,27 @@ function asset_schema() {
   );
 
   return $schema;
+}
+
+/**
+ * Change the name of the Asset and Asset Type 'name' column to 'title' for better compatibility.
+ */
+function asset_update_7001(&$sandbox) {
+  $schema = asset_schema();
+  if (!db_field_exists('asset', 'title')) {
+    db_change_field('asset', 'name', 'title', $schema['asset']['fields']['name']);
+  }
+  if (!db_field_exists('asset_type', 'title')) {
+    db_change_field('asset_type', 'name', 'title', $schema['asset_type']['fields']['name']);
+  }
+}
+
+/**
+ * Add a status column so assets can be unpublished.
+ */
+function asset_update_7002(&$sandbox) {
+  $schema = asset_schema();
+  if (!db_field_exists('asset', 'status')) {
+    db_add_field('asset', 'status', $schema['asset']['fields']['status']);
+  }
 }

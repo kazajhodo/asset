@@ -277,7 +277,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         $asset_type = asset_type_load($entity->type);
         if(!empty($asset_type->data['usage_info'])){
           $entity_form['notice'] = array(
-            '#markup' => '<div class="alert-box warning">Editing this '.strtolower($asset_type->name).' asset will impact all other areas where this asset is used.</div>',
+            '#markup' => '<div class="alert-box messages warning">Editing this '.strtolower($asset_type->title).' asset will impact all other areas where this asset is used.</div>',
             '#weight' => 6,
           );
           $entity_form['usage'] = array(
@@ -289,9 +289,9 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         }
       }
       if(!$this->settings['auto_title'] && empty($asset_type->data['auto_title'])){
-        $entity_form['name'] = array(
+        $entity_form['title'] = array(
           '#type' => 'textfield',
-          '#title' => t($asset_type->name . ' Name'),
+          '#title' => t($asset_type->title . ' Name'),
           '#default_value' => isset($entity->name) ? $entity->name : '',
           '#maxlength' => 255,
           '#required' => TRUE,
@@ -372,7 +372,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     if($usage = asset_usage($asset->id)){
       $asset_type = asset_type_load($asset->type);
       if(!empty($asset_type->data['usage_info'])){
-        $remove_form['usage']['warning']['#markup'] = '<div class="alert-box error"><strong>'.t('This %type is currently being used.', array('%type' => strtolower($asset_type->name))).'</strong> '.t('Deleting this asset remove it from anywhere it is used.').'</div>';
+        $remove_form['usage']['warning']['#markup'] = '<div class="alert-box messages error"><strong>'.t('This %type is currently being used.', array('%type' => strtolower($asset_type->title))).'</strong> '.t('Deleting this asset remove it from anywhere it is used.').'</div>';
         $remove_form['usage']['info'] = array(
           '#theme' => 'asset_usage',
           '#usage' => $usage,
@@ -382,6 +382,16 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       }
     }
     return $remove_form;
+  }
+
+  /**
+   * Overrides EntityInlineEntityFormController::entityFormSubmit().
+   */
+  public function entityFormSubmit(&$entity_form, &$form_state) {
+    parent::entityFormSubmit($entity_form, $form_state);
+
+    // Set the title if needed.
+    entity_get_controller('asset')->setTitle($entity_form['#entity']);
   }
 
 }
@@ -431,7 +441,7 @@ function _asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
 
   $entity = $form['#entity'];
   $asset_type = asset_type_load($entity->type);
-  $form['#title'] = t('Add New @title', array('@title' => $asset_type->name));
+  $form['#title'] = t('Add New @title', array('@title' => $asset_type->title));
 
   $form['actions']['#type'] = 'actions';
 
@@ -443,7 +453,7 @@ function _asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
   // }
 
   if(isset($form['actions']['ief_add_save'])){
-    $form['actions']['ief_add_save']['#value'] = t('Create @title', array('@title' => $asset_type->name));
+    $form['actions']['ief_add_save']['#value'] = t('Create @title', array('@title' => $asset_type->title));
     $form['actions']['ief_add_save']['#attributes']['class'][] = 'primary';
     $form['actions']['ief_add_save']['#attributes']['class'][] = 'small';
   }
@@ -454,7 +464,7 @@ function _asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
   }
 
   if(isset($form['actions']['ief_edit_save'])){
-    $form['actions']['ief_edit_save']['#value'] = t('Update @title', array('@title' => $asset_type->name));
+    $form['actions']['ief_edit_save']['#value'] = t('Update @title', array('@title' => $asset_type->title));
     $form['actions']['ief_edit_save']['#attributes']['class'][] = 'primary';
     $form['actions']['ief_edit_save']['#attributes']['class'][] = 'small';
   }
@@ -489,14 +499,16 @@ function _asset_field_widget_inline_entity_form_form_alter(&$element, &$form_sta
         $row = &$element['entities'][$i];
         if(isset($row['actions']['ief_entity_edit'])){
           $edit = $row['actions']['ief_entity_edit'];
-          $wrapper = asset_entityreference_get($entity_type, $row['#entity'], $target);
-          $file = $wrapper->{$target['field_name']}->value();
-          $row['actions']['ief_entity_crop_' . $key] = array();
-          if(!empty($file['fid']) && empty($file['uri'])){
-            $file = file_load($file['fid']);
+          $wrappers = asset_entityreference_get($entity_type, $row['#entity'], $target);
+          foreach($wrappers as $wrapper){
+            $file = $wrapper->{$target['field_name']}->value();
+            $row['actions']['ief_entity_crop_' . $key] = array();
+            if(!empty($file['fid']) && empty($file['uri'])){
+              $file = file_load($file['fid']);
+            }
+            $element['#build_id'] = 'asset_ief_manualcrop';
+            manualcrop_croptool_process($element, $form_state, $row['actions']['ief_entity_crop_' . $key], (object) $file, $settings['manualcrop'][$key]['manualcrop']);
           }
-          $element['#build_id'] = 'asset_ief_manualcrop';
-          manualcrop_croptool_process($element, $form_state, $row['actions']['ief_entity_crop_' . $key], (object) $file, $settings['manualcrop'][$key]['manualcrop']);
         }
       }
     }

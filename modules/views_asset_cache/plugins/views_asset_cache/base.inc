@@ -155,7 +155,7 @@ class views_asset_cache_key {
   function asset_type_names(){
     $names = array();
     foreach(asset_get_types() as $asset_type_name => $asset_type){
-      $names[$asset_type_name] = $asset_type->name;
+      $names[$asset_type_name] = $asset_type->title;
     }
     return $names;
   }

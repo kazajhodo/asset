@@ -30,7 +30,7 @@ function asset_entity_info() {
     'entity keys' => array(
       'id' => 'id',
       'bundle' => 'type',
-      'label' => 'name',
+      'label' => 'title',
     ),
     // Bundles are defined by the asset types below
     'bundles' => array(),
@@ -83,7 +83,7 @@ function asset_entity_info() {
     'entity keys' => array(
       'id' => 'type',
       'name' => 'type',
-      'label' => 'name',
+      'label' => 'title',
     ),
     'label callback' => 'entity_class_label',
     'access callback' => 'asset_type_access',
@@ -123,7 +123,7 @@ function asset_entity_info() {
 function asset_entity_info_alter(&$entity_info) {
   foreach (asset_get_types() as $type => $info) {
     $entity_info['asset']['bundles'][$type] = array(
-      'label' => $info->name,
+      'label' => $info->title,
       'admin' => array(
         'path' => 'admin/structure/assets/manage/%asset_type',
         'real path' => 'admin/structure/assets/manage/' . $type,
@@ -141,6 +141,17 @@ function asset_entity_info_alter(&$entity_info) {
       );
     }
   }
+}
+
+/**
+ * Add a link to the actions area of a current request.
+ */
+function asset_menu_action_add($action = NULL){
+  $actions = &drupal_static(__FUNCTION__);
+  if($action){
+    $actions[] = $action;
+  }
+  return $actions;
 }
 
 /**
@@ -180,6 +191,33 @@ function asset_menu_local_tasks_alter(&$data, $router_item, $root_path) {
     }
     return;
   }
+  if ($actions = asset_menu_action_add()){
+    $data['actions']['output'] = array_merge($data['actions']['output'], $actions);
+    $data['actions']['count'] = count($data['actions']['output']);
+  }
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function asset_field_extra_fields() {
+  $extra = array();
+
+  foreach (asset_get_types() as $type) {
+    if (!empty($type->data['render_title'])) {
+      $extra['asset'][$type->type] = array(
+        'display' => array(
+          'title' => array(
+            'label' => t('Title'),
+            'description' => t('Asset module element'),
+            'weight' => -5,
+          ),
+        ),
+      );
+    }
+  }
+
+  return $extra;
 }
 
 /**
@@ -339,13 +377,13 @@ function asset_permission() {
     $type_name = $asset_type->type;
     $permissions += array(
       "edit any $type_name asset" => array(
-        'title' => t('%type_name: Edit any asset', array('%type_name' => $asset_type->name)),
+        'title' => t('%type_name: Edit any asset', array('%type_name' => $asset_type->title)),
       ),
       "view any $type_name asset" => array(
-        'title' => t('%type_name: View any asset', array('%type_name' => $asset_type->name)),
+        'title' => t('%type_name: View any asset', array('%type_name' => $asset_type->title)),
       ),
       "delete any $type_name asset" => array(
-        'title' => t('%type_name: Delete any asset', array('%type_name' => $asset_type->name)),
+        'title' => t('%type_name: Delete any asset', array('%type_name' => $asset_type->title)),
       ),
     );
   }
@@ -415,7 +453,7 @@ function asset_instance_access($op, $instance = NULL, $account = NULL) {
  * Menu title callback for showing individual entities
  */
 function asset_page_title(Asset $asset){
-  return $asset->name;
+  return $asset->title;
 }
 
 /**
@@ -423,7 +461,7 @@ function asset_page_title(Asset $asset){
  * @todo - get rid of drupal_set_title();
  */
 function asset_page_view($asset, $view_mode = 'full') {
-  drupal_set_title($asset->name);
+  drupal_set_title($asset->title);
   $content = asset_render($asset, $view_mode);
   return $content;
 }
@@ -647,7 +685,7 @@ function asset_orphans(){
  * Get URL to an asset. We allow operational URLs to be overwritten on a
  * per-asset-type basis. This helper will return the correct URL.
  *
- * @param $asset
+ * @param $asset or $asset->type
  *   The asset object or asset id
  * @param $op
  *   The operation to get the URL for. Options are list/view/edit/delete
@@ -660,8 +698,14 @@ function asset_url($asset, $op = 'view'){
   if(is_numeric($asset)){
     $asset = asset_load($asset);
   }
+  elseif(is_string($asset)){
+    $asset = asset_create(array('type' => $asset));
+  }
+  $asset_type = $asset->type;
+  $base = 'admin/content/assets';
   $defaults = array(
     'view' => 'asset/[asset:id]',
+    'create' => 'admin/content/assets/add/[asset:type]',
     'list' => 'admin/content/assets',
     'edit' => 'admin/content/assets/[asset:id]/edit',
     'delete' => 'admin/content/assets/[asset:id]/delete',
@@ -669,11 +713,14 @@ function asset_url($asset, $op = 'view'){
   $op = isset($defaults[$op]) ? $op : 'view';
   $url = $defaults[$op];
   if($op !== 'view'){
-    if(isset($asset_types[$asset->type]) && !empty($asset_types[$asset->type]->data['path'])){
+    if(isset($asset_types[$asset_type]) && !empty($asset_types[$asset_type]->data['path'])){
       if($op == 'list'){
-        return $asset_types[$asset->type]->data['path'];
+        return $asset_types[$asset_type]->data['path'];
       }
-      $url = preg_replace('/^[^\[]+/', $asset_types[$asset->type]->data['path'] . '/', $url);
+      if($op == 'create'){
+        return $asset_types[$asset_type]->data['path'] . '/add';
+      }
+      $url = str_replace($base, $asset_types[$asset_type]->data['path'], $url);
     }
   }
   return token_replace($url, array('asset' => $asset));
@@ -714,7 +761,7 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
     $view->destroy();
   }
   else{
-    drupal_set_message(t('Count not find browser for the %name asset type.', array('%name' => $asset_type->name)), 'warning');
+    drupal_set_message(t('Count not find browser for the %name asset type.', array('%name' => $asset_type->title)), 'warning');
   }
   return $output;
 }
@@ -1307,11 +1354,20 @@ function asset_entityreference_contains($field, $type, $parents = array()){
  */
 function asset_entityreference_get($entity_type, $entity, $target){
   $wrapper = entity_metadata_wrapper($entity_type, $entity);
-  foreach($target['parents'] as $parent){
-    if($entity = $wrapper->{$parent}->value()){
-      $info = $wrapper->{$parent}->info();
-      $wrapper = entity_metadata_wrapper($info['type'], $entity);
+  $wrappers = array();
+  if(!empty($target['parents'])){
+    foreach($target['parents'] as $parent){
+      if($entities = $wrapper->{$parent}->value()){
+        $entities = is_array($entities) ? $entities : array($entities);
+        $instance = field_info_field($parent);
+        foreach($entities as $entity){
+          $wrappers[] = entity_metadata_wrapper($instance['settings']['target_type'], $entity);
+        }
+      }
     }
   }
-  return $wrapper;
+  else{
+    $wrappers[] = $wrapper;
+  }
+  return $wrappers;
 }

@@ -10,7 +10,7 @@ class Asset extends Entity {
   }
 
   protected function defaultLabel() {
-    return $this->name;
+    return $this->title;
   }
 
   protected function defaultUri() {

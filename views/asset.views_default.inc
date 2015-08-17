@@ -45,10 +45,10 @@ function asset_views_default_views_browser($asset_type){
 
   $view = new view();
   $view->name = 'asset_' . $asset_type->type;
-  $view->description = 'A view used to list all asset types of "'.$asset_type->name.'".';
+  $view->description = 'A view used to list all asset types of "'.$asset_type->title.'".';
   $view->tag = 'assets';
   $view->base_table = 'asset';
-  $view->human_name = 'ASSETS | ' . $asset_type->name;
+  $view->human_name = 'ASSETS | ' . $asset_type->title;
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
@@ -76,13 +76,13 @@ function asset_views_default_views_browser($asset_type){
   $handler->display->display_options['empty']['area_text_custom']['field'] = 'area_text_custom';
   $handler->display->display_options['empty']['area_text_custom']['label'] = 'No Results Found';
   $handler->display->display_options['empty']['area_text_custom']['empty'] = TRUE;
-  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box status">No '.$asset_type->plural.' found.</div>';
+  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box messages status">No '.$asset_type->plural.' found.</div>';
   /* Field: Asset: Label */
-  $handler->display->display_options['fields']['name']['id'] = 'name';
-  $handler->display->display_options['fields']['name']['table'] = 'asset';
-  $handler->display->display_options['fields']['name']['field'] = 'name';
-  $handler->display->display_options['fields']['name']['label'] = '';
-  $handler->display->display_options['fields']['name']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['title']['id'] = 'title';
+  $handler->display->display_options['fields']['title']['table'] = 'asset';
+  $handler->display->display_options['fields']['title']['field'] = 'title';
+  $handler->display->display_options['fields']['title']['label'] = '';
+  $handler->display->display_options['fields']['title']['element_label_colon'] = FALSE;
   /* Field: Asset: Image */
   if($has_image){
     $handler->display->display_options['fields'][$has_image]['id'] = $has_image;
@@ -159,15 +159,15 @@ function asset_views_default_views_browser($asset_type){
     $asset_type->type => $asset_type->type,
   );
   /* Filter criterion: Asset: Label */
-  $handler->display->display_options['filters']['name']['id'] = 'name';
-  $handler->display->display_options['filters']['name']['table'] = 'asset';
-  $handler->display->display_options['filters']['name']['field'] = 'name';
-  $handler->display->display_options['filters']['name']['operator'] = 'contains';
-  $handler->display->display_options['filters']['name']['exposed'] = TRUE;
-  $handler->display->display_options['filters']['name']['expose']['operator_id'] = 'name_op';
-  $handler->display->display_options['filters']['name']['expose']['label'] = 'Name';
-  $handler->display->display_options['filters']['name']['expose']['operator'] = 'name_op';
-  $handler->display->display_options['filters']['name']['expose']['identifier'] = 'name';
+  $handler->display->display_options['filters']['title']['id'] = 'title';
+  $handler->display->display_options['filters']['title']['table'] = 'asset';
+  $handler->display->display_options['filters']['title']['field'] = 'title';
+  $handler->display->display_options['filters']['title']['operator'] = 'contains';
+  $handler->display->display_options['filters']['title']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['title']['expose']['operator_id'] = 'name_op';
+  $handler->display->display_options['filters']['title']['expose']['label'] = 'Name';
+  $handler->display->display_options['filters']['title']['expose']['operator'] = 'name_op';
+  $handler->display->display_options['filters']['title']['expose']['identifier'] = 'title';
 
   return $view;
 
@@ -205,8 +205,8 @@ function asset_views_default_views_admin_list() {
   $handler->display->display_options['style_plugin'] = 'table';
   $handler->display->display_options['style_options']['columns'] = array(
     'asset_icon' => 'asset_icon',
-    'name' => 'name',
-    'asset_link' => 'name',
+    'title' => 'title',
+    'asset_link' => 'title',
     'asset_ops' => 'asset_ops',
   );
   $handler->display->display_options['style_options']['default'] = '-1';
@@ -216,7 +216,7 @@ function asset_views_default_views_admin_list() {
       'separator' => '',
       'empty_column' => 0,
     ),
-    'name' => array(
+    'title' => array(
       'sortable' => 0,
       'default_sort_order' => 'asc',
       'align' => '',
@@ -239,7 +239,7 @@ function asset_views_default_views_admin_list() {
   $handler->display->display_options['empty']['area_text_custom']['table'] = 'views';
   $handler->display->display_options['empty']['area_text_custom']['field'] = 'area_text_custom';
   $handler->display->display_options['empty']['area_text_custom']['empty'] = TRUE;
-  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box">No assets have been created yet</div>';
+  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box messages">No assets have been created yet</div>';
   /* Relationship: Asset: Author */
   $handler->display->display_options['relationships']['uid']['id'] = 'uid';
   $handler->display->display_options['relationships']['uid']['table'] = 'asset';
@@ -249,10 +249,10 @@ function asset_views_default_views_admin_list() {
   $handler->display->display_options['fields']['asset_icon']['table'] = 'asset';
   $handler->display->display_options['fields']['asset_icon']['field'] = 'asset_icon';
   /* Field: Asset: Label */
-  $handler->display->display_options['fields']['name']['id'] = 'name';
-  $handler->display->display_options['fields']['name']['table'] = 'asset';
-  $handler->display->display_options['fields']['name']['field'] = 'name';
-  $handler->display->display_options['fields']['name']['label'] = 'Name';
+  $handler->display->display_options['fields']['title']['id'] = 'title';
+  $handler->display->display_options['fields']['title']['table'] = 'asset';
+  $handler->display->display_options['fields']['title']['field'] = 'title';
+  $handler->display->display_options['fields']['title']['label'] = 'Name';
   /* Field: Asset: Usage */
   $handler->display->display_options['fields']['asset_usage']['id'] = 'asset_usage';
   $handler->display->display_options['fields']['asset_usage']['table'] = 'asset';
@@ -291,17 +291,17 @@ function asset_views_default_views_admin_list() {
   $handler->display->display_options['sorts']['changed']['field'] = 'changed';
   $handler->display->display_options['sorts']['changed']['order'] = 'DESC';
   /* Filter criterion: Asset: Label */
-  $handler->display->display_options['filters']['name']['id'] = 'name';
-  $handler->display->display_options['filters']['name']['table'] = 'asset';
-  $handler->display->display_options['filters']['name']['field'] = 'name';
-  $handler->display->display_options['filters']['name']['operator'] = 'contains';
-  $handler->display->display_options['filters']['name']['group'] = 1;
-  $handler->display->display_options['filters']['name']['exposed'] = TRUE;
-  $handler->display->display_options['filters']['name']['expose']['operator_id'] = 'name_op';
-  $handler->display->display_options['filters']['name']['expose']['label'] = 'Label';
-  $handler->display->display_options['filters']['name']['expose']['operator'] = 'name_op';
-  $handler->display->display_options['filters']['name']['expose']['identifier'] = 'name';
-  $handler->display->display_options['filters']['name']['expose']['remember_roles'] = array(
+  $handler->display->display_options['filters']['title']['id'] = 'title';
+  $handler->display->display_options['filters']['title']['table'] = 'asset';
+  $handler->display->display_options['filters']['title']['field'] = 'title';
+  $handler->display->display_options['filters']['title']['operator'] = 'contains';
+  $handler->display->display_options['filters']['title']['group'] = 1;
+  $handler->display->display_options['filters']['title']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['title']['expose']['operator_id'] = 'name_op';
+  $handler->display->display_options['filters']['title']['expose']['label'] = 'Label';
+  $handler->display->display_options['filters']['title']['expose']['operator'] = 'name_op';
+  $handler->display->display_options['filters']['title']['expose']['identifier'] = 'title';
+  $handler->display->display_options['filters']['title']['expose']['remember_roles'] = array(
     2 => '2',
     1 => 0,
     3 => 0,

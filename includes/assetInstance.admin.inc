@@ -112,7 +112,7 @@ function asset_instance_delete_form($form, &$form_state, $asset, $instance) {
   if(isset($usage['content'][$instance->id])){
     $form['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
 
-    $message = '<div class="alert-box alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset instance will reset all areas where the asset is used to their default display settings.').'</div>';
+    $message = '<div class="alert-box messages alert"><h4>'.t('This action cannot be undone.').'</h4><strong>'.t('This asset is currently being used.').'</strong> '.t('Deleting this asset instance will reset all areas where the asset is used to their default display settings.').'</div>';
 
     $form['usage'] = array(
       '#theme' => 'asset_usage_instance',
@@ -122,7 +122,7 @@ function asset_instance_delete_form($form, &$form_state, $asset, $instance) {
   }
 
   $form = confirm_form($form,
-    t('Are you sure you want to delete instance %instance of asset %name?', array('%instance' =>'#'.$instance->id, '%name' => $asset->name)),
+    t('Are you sure you want to delete instance %instance of asset %name?', array('%instance' =>'#'.$instance->id, '%name' => $asset->title)),
     'asset/' . $asset->id,
     $message,
     t('Delete'),
@@ -140,7 +140,7 @@ function asset_instance_delete_form_submit($form, &$form_state) {
   $asset = $form_state['asset'];
   $instance = $form_state['asset_instance'];
   $instance->delete();
-  drupal_set_message(t('Instance %instance of asset %name has been deleted.', array('%instance' =>'#'.$instance->id, '%name' => $asset->name)));
+  drupal_set_message(t('Instance %instance of asset %name has been deleted.', array('%instance' =>'#'.$instance->id, '%name' => $asset->title)));
   watchdog('asset', 'Deleted asset instance %instance.', array('%instance' => $instance->id));
 
   $form_state['redirect'] = 'asset/' . $asset->id;
@@ -150,14 +150,14 @@ function asset_instance_delete_form_submit($form, &$form_state) {
  * Title for management pages.
  */
 function asset_instance_create_form_title(Asset $asset){
-  return 'Create new instance for ' . $asset->name;
+  return 'Create new instance for ' . $asset->title;
 }
 
 /**
  * Title for management pages.
  */
 function asset_instance_form_title(Asset $asset, AssetInstance $instance, $op = 'view'){
-  return ucfirst($op) . ' ' . $asset->name . ' instance #' . $instance->id;
+  return ucfirst($op) . ' ' . $asset->title . ' instance #' . $instance->id;
 }
 
 /**

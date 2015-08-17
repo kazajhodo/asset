@@ -17,7 +17,7 @@ class asset_handler_type_filter extends views_handler_filter_in_operator {
       $types = asset_get_types();
       $options = array();
       foreach ($types as $type => $info) {
-        $options[$type] = t($info->name);
+        $options[$type] = t($info->title);
       }
       asort($options);
       $this->value_options = $options;
