@@ -40,7 +40,7 @@ function asset_field_formatter_info() {
     'asset_image' => array(
       'label' => t('ASSET | Image'),
       'field types' => array('entityreference'),
-      'settings' => array('field_name' => '', 'image_style' => '', 'image_link' => '', 'as_url' => FALSE),
+      'settings' => array('field_name' => '', 'image_style' => '', 'image_link' => '', 'as_url' => FALSE, 'first_only' => FALSE),
     ),
     'asset_file' => array(
       'label' => t('ASSET | File'),
@@ -103,6 +103,16 @@ function asset_field_formatter_settings_form($field, $instance, $view_mode, $for
           '#title' => t('Display as URL'),
           '#default_value' => $settings['as_url'],
           '#id' => $elid,
+        );
+        $element['first_only'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Display first image only'),
+          '#default_value' => $settings['first_only'],
+        );
+        $element['first_only']['#states'] = array(
+          'visible' => array(
+            '#' . $elid => array('checked' => FALSE),
+          ),
         );
       }
       break;
@@ -265,6 +275,9 @@ function asset_field_formatter_settings_summary($field, $instance, $view_mode) {
     if($settings['as_url']){
       $summary .= '<br />' . t('As URL: !url', array('!url' => '<i class="fa fa-check text-success"></i>'));
     }
+    if($settings['first_only']){
+      $summary .= '<br />' . t('First image only');
+    }
     return $summary;
   }
 
@@ -410,13 +423,14 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
         $target = $fields[$settings['field_name']];
         $target_field = $target['field'];
         $target_instance = $target['instance'];
+        if($settings['first_only']){
+          $items = array(reset($items));
+        }
+        $target_entity_wrappers = asset_entityreference_get($entity_type, $entity, $target);
         foreach ($items as $delta => $item) {
-          $target_entity_wrapper = asset_entityreference_get($entity_type, $entity, $target);
+          $target_entity_wrapper = $target_entity_wrappers[$delta];
           $target_entity_type = $target_entity_wrapper->type();
           $target_entity = $target_entity_wrapper->value();
-          // $target_entity_type = $item['entity_type'];
-          // $target_entity = $item['entity'];
-          // list(, , $target_bundle) = entity_extract_ids($target_entity_type, $target_entity);
           $target_items = field_get_items($target_entity_type, $target_entity, $target['field_name']);
           module_load_include('inc', 'image', 'image.field');
           $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
