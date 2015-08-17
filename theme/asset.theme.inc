@@ -9,9 +9,28 @@ function _asset_preprocess_entity(&$vars) {
   $instance = $asset->instance;
   $asset_type = asset_type_load($asset->type);
   $key = 'asset-' . $asset->id . '-' . $asset->instance->id;
-  $vars['classes_array'][] = drupal_html_class('asset-' . $vars['view_mode']);
+  $vars['classes_array'] = array();
+  $vars['classes_array'][] = drupal_html_class('asset-' . $asset->type);
+  $vars['classes_array'][] = drupal_html_class('asset-view-' . $vars['view_mode']);
   $vars['classes_array'][] = $key;
   $vars['element_type'] = 'div';
+
+  if(!empty($asset_type->data['render_title'])){
+    $display = $vars['view_mode'];
+    $extra = field_info_extra_fields('asset', $asset->type, 'display');
+    if(isset($extra['title']) && !empty($extra['title']['display'][$display]['visible'])){
+      $vars['content']['title'] = array(
+        '#type' => 'html_tag',
+        '#tag' => 'h3',
+        '#attributes' => array(
+          'class' => 'title',
+        ),
+        '#value' => $asset->title,
+        '#weight' => $extra['title']['display'][$display]['weight'],
+      );
+    }
+  }
+
   // If view mode is asset, we need to process it through the enabled widgets.
   if(in_array($vars['view_mode'], array('asset'))){
     foreach($instance->widgets as $widget_id => $widget){
