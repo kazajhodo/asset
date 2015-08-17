@@ -56,7 +56,7 @@ function asset_views_data_alter(&$data) {
     ),
   );
 
-  $data['views']['asset_creation'] = array(
+  $data['asset']['asset_creation'] = array(
     'title' => t('Asset Creation'),
     'help' => t('Shows asset creation links.'),
     'area' => array(
@@ -106,6 +106,39 @@ function asset_views_data_alter(&$data) {
       'click sortable' => TRUE
     ),
   );
+
+  // published status
+  $data['asset']['status'] = array(
+    'title' => t('Published'),
+    'help' => t('Whether or not the content is published.'),
+    'field' => array(
+      'handler' => 'views_handler_field_boolean',
+      'click sortable' => TRUE,
+      'output formats' => array(
+        'published-notpublished' => array(t('Published'), t('Not published')),
+      ),
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_boolean_operator',
+      'label' => t('Published'),
+      'type' => 'yes-no',
+      'use equal' => TRUE, // Use status = 1 instead of status <> 0 in WHERE statment
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  );
+
+  $data['asset']['render'] = array(
+    'title' => t('Rendered Asset'),
+    'help' => t('Displays a single chosen asset.'),
+    'area' => array(
+      'handler' => 'asset_handler_area_entity',
+    ),
+  );
+
+  // Alter defaults provided by entity module.
+  $data['asset']['title']['title'] = 'Title';
 }
 
 /**
