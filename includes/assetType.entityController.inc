@@ -9,6 +9,22 @@ class AssetTypeController extends EntityAPIControllerExportable {
     parent::__construct($entityType);
   }
 
+  protected function dataDefaults(){
+    return array(
+      'icon'                => '',
+      'path'                => '',
+      'auto_title'          => 0,
+      'auto_title_pattern'  => '',
+      'render_title'        => 0,
+      'allow_status'        => 0,
+      'usage_info'          => 0,
+      'instance_info'       => 0,
+      'purge'               => 0,
+      'no_multiple'         => 0,
+      'require_instance'    => 0,
+    );
+  }
+
    /**
    * Create a asset type - we first set up the values that are specific
    * to our asset type schema but then also go through the EntityAPIController
@@ -25,9 +41,10 @@ class AssetTypeController extends EntityAPIControllerExportable {
     $values += array(
       'id'     => '',
       'is_new' => TRUE,
-      'name'   => '',
+      'title'  => '',
+      'type'   => '',
       'plural' => '',
-      'data'   => '',
+      'data'   => $this->dataDefaults(),
     );
     $asset_type = parent::create($values);
     return $asset_type;
@@ -43,6 +60,8 @@ class AssetTypeController extends EntityAPIControllerExportable {
     $asset_types = parent::load($ids, $conditions);
     $widgets = asset_get_plugin('widget');
     foreach($asset_types as $asset_id => $type){
+      // Load in default values for data.
+      $type->data += $this->dataDefaults();
       // Widgets are not always available to the public (ie: placeholder). There
       // are times where we need to easily and quickly know this.
       $type->public = FALSE;
