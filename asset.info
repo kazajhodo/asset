@@ -20,6 +20,7 @@ files[] = includes/assetType.entityController.inc
 files[] = includes/assetInstance.entity.inc
 files[] = includes/assetInstance.entityController.inc
 files[] = views/asset.views.inc
+files[] = views/asset_handler_area_entity.inc
 files[] = views/asset_handler_creation_field.inc
 files[] = views/asset_handler_link_field.inc
 files[] = views/asset_handler_icon_field.inc
