@@ -29,7 +29,7 @@
   overflow:hidden;
 }
 
-.asset-browser .views-row .views-field-name{
+.asset-browser .views-row .views-field-title{
   position:absolute;
   bottom:0;
   left:0;
@@ -81,7 +81,7 @@
 }
 
 .asset-browser .views-row .asset-select:hover span{
-  margin-top:15px;
+  margin-top:18px;
 }
 
 .asset-browser .views-row .asset-select:focus{
@@ -117,7 +117,7 @@
 
 .asset-inline-entity-browser fieldset.ief-form{
   /*background:#f0f0f0;*/
-  padding:10px 15px 15px;
+  /*padding:10px 15px 15px;*/
 }
 
 .asset-inline-entity-browser button{
