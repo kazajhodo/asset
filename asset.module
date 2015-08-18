@@ -300,15 +300,25 @@ function asset_field_delete_instance($instance){
  * Implements hook_fett_icons_alter().
  */
 function asset_fett_icons_alter(&$icons){
-  $icons['Assets List'] = 'list';
-  $icons['Add Instance'] = 'plus';
+  return asset_fawesome_icons();
+}
+
+/**
+ * Implements hook_fawesome_icons().
+ */
+function asset_fawesome_icons(){
+  $icons = array(
+    'assets list'   => 'list',
+    'add instance' => 'plus',
+  );
   foreach (asset_get_types() as $type) {
     if(!empty($type->data['icon'])){
-      $icons[$type->name] = $type->data['icon'];
+      $icons[$type->title] = $type->data['icon'];
       $icons[$type->plural] = $type->data['icon'];
-      $icons['Add ' . $type->name] = 'plus';
+      $icons['Add ' . $type->title] = 'plus';
     }
   }
+  return $icons;
 }
 
 /**
@@ -745,19 +755,17 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
   $output['#attached']['js']['browser'] = drupal_get_path('module','asset') . '/js/asset.browser.js';
   $output['#attached']['js'][] = drupal_get_path('module','views') . '/js/ajax_view.js';
 
-  $view_name = 'asset_' . $asset_type->type;
-  $display_id = 'default';
   $args = array();
-  if($view = views_get_view($view_name)){
+  if($view = views_get_view('asset_browser')){
     $view->set_arguments($args);
-    $view->set_display($display_id);
+    $view->set_display($asset_type->type);
     // $view->set_items_per_page($results_per_page);
     $view->execute();
     $count = count( $view->result );
     $view->asset_view_mode = $view_mode;
     $view->asset_preview = TRUE;
     $view->asset_js_load = $js_load_assets;
-    $output['view']['#markup'] = $view->preview($display_id, $args);
+    $output['view']['#markup'] = $view->preview($asset_type->type, $args);
     $view->destroy();
   }
   else{
@@ -1308,18 +1316,6 @@ function asset_token_tool_load(){
 }
 
 /**
- * Determine if entity type entityreference child contains a field of a certain type.
- */
-function asset_entity_contains($entity_type, $bundle, $type){
-  $fields = array();
-  foreach (field_info_instances($entity_type, $bundle) as $field_name => $instance) {
-    $field = field_info_field($field_name);
-    $fields += asset_entityreference_contains($field, $type);
-  }
-  return $fields;
-}
-
-/**
  * Determine if entityreference child contains a field of a certain type.
  */
 function asset_entityreference_contains($field, $type, $parents = array()){
@@ -1327,14 +1323,15 @@ function asset_entityreference_contains($field, $type, $parents = array()){
   if ($field['type'] == 'entityreference' &&
     isset($field['settings']['handler_settings']['target_bundles']) &&
     count($field['settings']['handler_settings']['target_bundles']) == 1){
-    $original_field = $field;
+
     $entity_type = $field['settings']['target_type'];
     $bundle = key($field['settings']['handler_settings']['target_bundles']);
+    $parents[] = $field['field_name'];
+
     foreach (field_info_instances($entity_type, $bundle) as $field_name => $instance) {
       $field = field_info_field($field_name);
-      $parents[] = $original_field['field_name'];
       if ($field['type'] == $type) {
-        $fields[implode($parents, '_') . '_' . $field_name] = array(
+        $fields[implode($parents, '_') . '_' . $field['field_name']] = array(
           'field_name' => $field_name,
           'field' => $field,
           'instance' => $instance,
@@ -1349,6 +1346,35 @@ function asset_entityreference_contains($field, $type, $parents = array()){
   return $fields;
 }
 
+// function asset_entityreference_contains_children($field, $type, $parents = array()){
+//   $fields = array();
+//   if ($field['type'] == 'entityreference' &&
+//     isset($field['settings']['handler_settings']['target_bundles']) &&
+//     count($field['settings']['handler_settings']['target_bundles']) == 1){
+
+//     $entity_type = $field['settings']['target_type'];
+//     $bundle = key($field['settings']['handler_settings']['target_bundles']);
+//     $parents[] = $field['field_name'];
+
+//     foreach (field_info_instances($entity_type, $bundle) as $field_name => $instance) {
+//       $field = field_info_field($field_name);
+//       if ($field['type'] == $type) {
+//         $parents[] = $field['field_name'];
+//         $fields[implode($parents, '_')] = array(
+//           'field_name' => $field_name,
+//           'field' => $field,
+//           'instance' => $instance,
+//           'parents' => $parents,
+//         );
+//       }
+//       else{
+//         $fields += asset_entityreference_contains_children($field, $type, $parents);
+//       }
+//     }
+//   }
+//   return $fields;
+// }
+
 /**
  * Get entityreference entity from results of asset_entityreference_contains().
  */
@@ -1356,18 +1382,33 @@ function asset_entityreference_get($entity_type, $entity, $target){
   $wrapper = entity_metadata_wrapper($entity_type, $entity);
   $wrappers = array();
   if(!empty($target['parents'])){
-    foreach($target['parents'] as $parent){
-      if($entities = $wrapper->{$parent}->value()){
-        $entities = is_array($entities) ? $entities : array($entities);
-        $instance = field_info_field($parent);
-        foreach($entities as $entity){
-          $wrappers[] = entity_metadata_wrapper($instance['settings']['target_type'], $entity);
-        }
-      }
-    }
+    $wrappers = asset_entityreference_get_wrapper($target['parents'], $wrapper);
   }
   else{
     $wrappers[] = $wrapper;
   }
   return $wrappers;
 }
+
+/**
+ * Get the entity wrappers based on their parent trees.
+ */
+function asset_entityreference_get_wrapper($parents, $wrapper){
+  $wrappers = array();
+  $parent = array_shift($parents);
+  if($entities = $wrapper->{$parent}->value()){
+    $entities = is_array($entities) ? $entities : array($entities);
+    $instance = field_info_field($parent);
+    foreach($entities as $entity){
+      $wrapper = entity_metadata_wrapper($instance['settings']['target_type'], $entity);
+      if(!empty($parents)){
+        $wrappers = array_merge($wrappers, asset_entityreference_get_wrapper($parents, $wrapper));
+      }
+      else{
+        $wrappers[] = $wrapper;
+      }
+    }
+  }
+  return $wrappers;
+}
+
