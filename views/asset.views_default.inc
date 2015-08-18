@@ -5,50 +5,58 @@
  */
 function asset_views_default_views() {
   $views = array();
-  $views['asset_admin'] = asset_views_default_views_admin_list();
-
-  $asset_types = asset_get_types();
-  foreach($asset_types as $bundle => $asset_type){
-    $views['asset_'.$asset_type->type] = asset_views_default_views_browser($asset_type);
-  }
+  $views['asset_admin'] = asset_views_default_asset_library();
+  $views['asset_browser'] = asset_views_default_asset_browser();
   return $views;
 }
 
 /**
- * Asset browser list.
+ * Asset browser default view.
  */
-function asset_views_default_views_browser($asset_type){
+function asset_views_default_asset_browser() {
 
-  $info = field_info_instances('asset', $asset_type->type);
-  $has_image = $has_file = $has_video = $has_reference = FALSE;
-  foreach($info as $instance){
-    $field = field_info_field($instance['field_name']);
-    switch($field['type']){
-      case 'image':
-        $has_image = $field['field_name'];
-        break;
-      case 'file':
-        $has_file = $field['field_name'];
-        break;
-      case 'video_embed_field':
-        $has_video = $field['field_name'];
-        break;
-      case 'entityreference':
-        $has_reference = array(
-          'field_name' => $field['field_name'],
-          'instance' => $instance,
-          'field' => $field,
-        );
-        break;
-    }
-  }
+  // Common Elements
+  $field_title = array();
+  $field_title['title']['id'] = 'title';
+  $field_title['title']['table'] = 'asset';
+  $field_title['title']['field'] = 'title';
+  $field_title['title']['label'] = '';
+  $field_title['title']['element_label_colon'] = FALSE;
+
+  $field_asset_select = array();
+  $field_asset_select['asset_select']['id'] = 'asset_select';
+  $field_asset_select['asset_select']['table'] = 'asset';
+  $field_asset_select['asset_select']['field'] = 'asset_select';
+  $field_asset_select['asset_select']['label'] = '';
+  $field_asset_select['asset_select']['element_label_colon'] = FALSE;
+
+  $filter_asset_type = array();
+  $filter_asset_type['type']['id'] = 'type';
+  $filter_asset_type['type']['table'] = 'asset';
+  $filter_asset_type['type']['field'] = 'type';
+  $filter_asset_type['type']['group'] = 1;
+  $filter_asset_type['type']['value'] = array();
+
+  $filter_title = array();
+  $filter_title['title']['id'] = 'title';
+  $filter_title['title']['table'] = 'asset';
+  $filter_title['title']['field'] = 'title';
+  $filter_title['title']['operator'] = 'contains';
+  $filter_title['title']['group'] = 1;
+  $filter_title['title']['exposed'] = TRUE;
+  $filter_title['title']['expose']['operator_id'] = 'name_op';
+  $filter_title['title']['expose']['label'] = 'Name';
+  $filter_title['title']['expose']['operator'] = 'name_op';
+  $filter_title['title']['expose']['identifier'] = 'title';
+
+
 
   $view = new view();
-  $view->name = 'asset_' . $asset_type->type;
-  $view->description = 'A view used to list all asset types of "'.$asset_type->title.'".';
+  $view->name = 'asset_browser';
+  $view->description = 'A view used to list all asset types of "File".';
   $view->tag = 'assets';
   $view->base_table = 'asset';
-  $view->human_name = 'ASSETS | ' . $asset_type->title;
+  $view->human_name = 'Asset Browser';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
@@ -76,101 +84,133 @@ function asset_views_default_views_browser($asset_type){
   $handler->display->display_options['empty']['area_text_custom']['field'] = 'area_text_custom';
   $handler->display->display_options['empty']['area_text_custom']['label'] = 'No Results Found';
   $handler->display->display_options['empty']['area_text_custom']['empty'] = TRUE;
-  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box messages status">No '.$asset_type->plural.' found.</div>';
-  /* Field: Asset: Label */
-  $handler->display->display_options['fields']['title']['id'] = 'title';
-  $handler->display->display_options['fields']['title']['table'] = 'asset';
-  $handler->display->display_options['fields']['title']['field'] = 'title';
-  $handler->display->display_options['fields']['title']['label'] = '';
-  $handler->display->display_options['fields']['title']['element_label_colon'] = FALSE;
-  /* Field: Asset: Image */
-  if($has_image){
-    $handler->display->display_options['fields'][$has_image]['id'] = $has_image;
-    $handler->display->display_options['fields'][$has_image]['table'] = 'field_data_' . $has_image;
-    $handler->display->display_options['fields'][$has_image]['field'] = $has_image;
-    $handler->display->display_options['fields'][$has_image]['label'] = '';
-    $handler->display->display_options['fields'][$has_image]['element_label_colon'] = FALSE;
-    $handler->display->display_options['fields'][$has_image]['click_sort_column'] = 'fid';
-    $handler->display->display_options['fields'][$has_image]['settings'] = array(
-      'image_style' => 'asset-thumb',
-      'image_link' => '',
-    );
-  }
-  /* Field: Asset: Video */
-  elseif($has_video){
-    $handler->display->display_options['fields'][$has_video]['id'] = $has_video;
-    $handler->display->display_options['fields'][$has_video]['table'] = 'field_data_' . $has_video;
-    $handler->display->display_options['fields'][$has_video]['field'] = $has_video;
-    $handler->display->display_options['fields'][$has_video]['label'] = '';
-    $handler->display->display_options['fields'][$has_video]['click_sort_column'] = 'video_url';
-    $handler->display->display_options['fields'][$has_video]['type'] = 'video_embed_field_thumbnail';
-    $handler->display->display_options['fields'][$has_video]['settings'] = array(
-      'image_style' => 'asset-thumb',
-      'image_link' => '',
-    );
-  }
-  /* Field: Asset: File */
-  elseif($has_file){
-    $handler->display->display_options['fields'][$has_file]['id'] = $has_file;
-    $handler->display->display_options['fields'][$has_file]['table'] = 'field_data_' . $has_file;
-    $handler->display->display_options['fields'][$has_file]['field'] = $has_file;
-    $handler->display->display_options['fields'][$has_file]['label'] = '';
-    $handler->display->display_options['fields'][$has_file]['element_label_colon'] = FALSE;
-    $handler->display->display_options['fields'][$has_file]['click_sort_column'] = 'fid';
-    $handler->display->display_options['fields'][$has_file]['type'] = 'file_mime_type_icon';
-  }
-  elseif($has_reference &&
-    isset($has_reference['field']['settings']['handler_settings']['target_bundles']) &&
-    count($has_reference['field']['settings']['handler_settings']['target_bundles']) == 1){
+  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box messages status">No Files found.</div>';
 
-    if($fields = asset_entityreference_contains($has_reference['field'], 'image')){
-      foreach($fields as $key => $data){
-        $handler->display->display_options['fields'][$has_reference['field_name']]['id'] = $has_reference['field_name'];
-        $handler->display->display_options['fields'][$has_reference['field_name']]['table'] = 'field_data_' . $has_reference['field_name'];
-        $handler->display->display_options['fields'][$has_reference['field_name']]['field'] = $has_reference['field_name'];
-        $handler->display->display_options['fields'][$has_reference['field_name']]['label'] = '';
-        // $handler->display->display_options['fields'][$has_reference['field_name']]['click_sort_column'] = 'target_id';
-        $handler->display->display_options['fields'][$has_reference['field_name']]['type'] = 'asset_image';
-        $handler->display->display_options['fields'][$has_reference['field_name']]['settings'] = array(
-          'field_name' => $key,
-          'image_style' => 'asset-thumb',
-          'image_link' => '',
-        );
-        break;
-      }
-    }
-  }
+  $handler->display->display_options['fields'] = array();
+  /* Field: Asset: Title */
+  $handler->display->display_options['fields'] += $field_title;
   /* Field: Asset: Asset Select */
-  $handler->display->display_options['fields']['asset_select']['id'] = 'asset_select';
-  $handler->display->display_options['fields']['asset_select']['table'] = 'asset';
-  $handler->display->display_options['fields']['asset_select']['field'] = 'asset_select';
-  $handler->display->display_options['fields']['asset_select']['label'] = '';
-  $handler->display->display_options['fields']['asset_select']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields'] += $field_asset_select;
+
   /* Sort criterion: Asset: Created */
   $handler->display->display_options['sorts']['created']['id'] = 'created';
   $handler->display->display_options['sorts']['created']['table'] = 'asset';
   $handler->display->display_options['sorts']['created']['field'] = 'created';
   $handler->display->display_options['sorts']['created']['order'] = 'DESC';
+
+  $handler->display->display_options['filters'] = array();
   /* Filter criterion: Asset: Type */
-  $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'asset';
-  $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = array(
-    $asset_type->type => $asset_type->type,
-  );
-  /* Filter criterion: Asset: Label */
-  $handler->display->display_options['filters']['title']['id'] = 'title';
-  $handler->display->display_options['filters']['title']['table'] = 'asset';
-  $handler->display->display_options['filters']['title']['field'] = 'title';
-  $handler->display->display_options['filters']['title']['operator'] = 'contains';
-  $handler->display->display_options['filters']['title']['exposed'] = TRUE;
-  $handler->display->display_options['filters']['title']['expose']['operator_id'] = 'name_op';
-  $handler->display->display_options['filters']['title']['expose']['label'] = 'Name';
-  $handler->display->display_options['filters']['title']['expose']['operator'] = 'name_op';
-  $handler->display->display_options['filters']['title']['expose']['identifier'] = 'title';
+  // $handler->display->display_options['filters'] += $filter_asset_type;
+  /* Filter criterion: Asset: Title */
+  $handler->display->display_options['filters'] += $filter_title;
+
+  foreach(asset_get_types() as $bundle => $asset_type){
+    $has_field = array();
+    foreach(field_info_instances('asset', $asset_type->type) as $instance){
+      $field = field_info_field($instance['field_name']);
+      $has_field[$field['type']][] = array(
+        $field['field_name'],
+        $field,
+        $instance,
+      );
+    }
+
+    $handler = $view->new_display('embed', $asset_type->title, $asset_type->type);
+    $handler->display->display_options['defaults']['fields'] = FALSE;
+
+    $handler->display->display_options['fields'] = array();
+    /* Field: Asset: Title */
+    $handler->display->display_options['fields'] += $field_title;
+
+    if(isset($has_field['image'])){
+      /* Field: Asset: Image */
+      list($field_name, $field, $instance) = reset($has_field['image']);
+      $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+      $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+      $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+      $handler->display->display_options['fields'][$field_name]['label'] = '';
+      $handler->display->display_options['fields'][$field_name]['element_label_colon'] = FALSE;
+      $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'fid';
+      $handler->display->display_options['fields'][$field_name]['settings'] = array(
+        'image_style' => 'asset-thumb',
+        'image_link' => '',
+      );
+    }
+
+    elseif(isset($has_field['video_embed_field'])){
+      /* Field: Asset: Image */
+      list($field_name, $field, $instance) = reset($has_field['video_embed_field']);
+      $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+      $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+      $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+      $handler->display->display_options['fields'][$field_name]['label'] = '';
+      $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'video_url';
+      $handler->display->display_options['fields'][$field_name]['type'] = 'video_embed_field_thumbnail';
+      $handler->display->display_options['fields'][$field_name]['settings'] = array(
+        'image_style' => 'asset-thumb',
+        'image_link' => '',
+      );
+    }
+
+    elseif(isset($has_field['file'])){
+      /* Field: Asset: Image */
+      list($field_name, $field, $instance) = reset($has_field['file']);
+      $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+      $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+      $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+      $handler->display->display_options['fields'][$field_name]['label'] = '';
+      $handler->display->display_options['fields'][$field_name]['element_label_colon'] = FALSE;
+      $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'fid';
+      $handler->display->display_options['fields'][$field_name]['type'] = 'file_mime_type_icon';
+    }
+
+    elseif(isset($has_field['entityreference'])){
+      /* Field: Children: Entity Reference */
+      foreach($has_field['entityreference'] as $reference){
+        $found = FALSE;
+        list($field_name, $field, $instance) = $reference;
+        if(isset($field['settings']['handler_settings']['target_bundles']) &&
+          count($field['settings']['handler_settings']['target_bundles']) == 1){
+          if($fields = asset_entityreference_contains($field, 'image')){
+            foreach($fields as $key => $data){
+              $found = TRUE;
+              $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+              $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+              $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+              $handler->display->display_options['fields'][$field_name]['label'] = '';
+              $handler->display->display_options['fields'][$field_name]['type'] = 'asset_image';
+              $handler->display->display_options['fields'][$field_name]['settings'] = array(
+                'field_name' => $key,
+                'image_style' => 'asset-thumb',
+                'image_link' => '',
+              );
+              break;
+            }
+          }
+        }
+        if($found){
+          break;
+        }
+      }
+    }
+
+    /* Field: Asset: Asset Select */
+    $handler->display->display_options['fields'] += $field_asset_select;
+
+    $handler->display->display_options['defaults']['filter_groups'] = FALSE;
+    $handler->display->display_options['defaults']['filters'] = FALSE;
+
+    $handler->display->display_options['filters'] = array();
+    /* Filter criterion: Asset: Type */
+    $handler->display->display_options['filters'] += $filter_asset_type;
+    $handler->display->display_options['filters']['type']['value'] = array(
+      $asset_type->type => $asset_type->type,
+    );
+    /* Filter criterion: Asset: Title */
+    $handler->display->display_options['filters'] += $filter_title;
+  }
 
   return $view;
-
 }
 
 
@@ -179,14 +219,14 @@ function asset_views_default_views_browser($asset_type){
  * Asset admin list.
  *
  */
-function asset_views_default_views_admin_list() {
+function asset_views_default_asset_library() {
 
   $view = new view();
   $view->name = 'assets';
   $view->description = 'A list of all assets';
   $view->tag = 'assets';
   $view->base_table = 'asset';
-  $view->human_name = 'ASSETS | Admin List';
+  $view->human_name = 'Asset Library';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
