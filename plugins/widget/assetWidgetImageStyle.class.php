@@ -87,6 +87,7 @@ class assetWidgetImageStyle extends assetWidget {
         }
       }
     }
+    $vars['classes_array'][] = drupal_html_class('style-' . $values['image_style']);
   }
 
 }
