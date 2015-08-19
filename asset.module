@@ -1396,7 +1396,11 @@ function asset_entityreference_get($entity_type, $entity, $target){
 function asset_entityreference_get_wrapper($parents, $wrapper){
   $wrappers = array();
   $parent = array_shift($parents);
-  if($entities = $wrapper->{$parent}->value()){
+  $exists = isset($wrapper->{$parent});
+  if(!$exists){
+    watchdog('asset', 'Something is wrong with your entity reference field. There are more than 1 asset types being assigned to the field.');
+  }
+  if($exists && $entities = $wrapper->{$parent}->value()){
     $entities = is_array($entities) ? $entities : array($entities);
     $instance = field_info_field($parent);
     foreach($entities as $entity){
