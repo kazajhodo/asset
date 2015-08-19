@@ -47,7 +47,7 @@ $.asset.toToken = function(html) {
   html = html.replace(regex, '');
   // Replace tokens
   var $html = $('<div></div>').append(html);
-  $('.entity-asset', $html).each(function(){
+  $('*[data-aid]', $html).each(function(){
     $asset = $(this);
     aid = $asset.attr('data-aid');
     iid = $asset.attr('data-iid');
