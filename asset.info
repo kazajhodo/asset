@@ -2,7 +2,7 @@ name        = Asset
 description = Provides assets for various uses.
 package     = Asset
 core        = 7.x
-version     = "7.x-2.x-dev"
+version     = "7.x-2.2"
 
 dependencies[] = ctools
 dependencies[] = entity
