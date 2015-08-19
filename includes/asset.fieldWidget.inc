@@ -428,23 +428,25 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
         }
         $target_entity_wrappers = asset_entityreference_get($entity_type, $entity, $target);
         foreach ($items as $delta => $item) {
-          $target_entity_wrapper = $target_entity_wrappers[$delta];
-          $target_entity_type = $target_entity_wrapper->type();
-          $target_entity = $target_entity_wrapper->value();
-          $target_items = field_get_items($target_entity_type, $target_entity, $target['field_name']);
-          module_load_include('inc', 'image', 'image.field');
-          $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
-          if($settings['as_url']){
-            foreach($element[$delta] as &$e){
-              $element[$delta] = array(
-                '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
-              );
+          if(isset($target_entity_wrappers[$delta])){
+            $target_entity_wrapper = $target_entity_wrappers[$delta];
+            $target_entity_type = $target_entity_wrapper->type();
+            $target_entity = $target_entity_wrapper->value();
+            $target_items = field_get_items($target_entity_type, $target_entity, $target['field_name']);
+            module_load_include('inc', 'image', 'image.field');
+            $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+            if($settings['as_url']){
+              foreach($element[$delta] as &$e){
+                $element[$delta] = array(
+                  '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
+                );
+              }
             }
-          }
-          if ($display['settings']['image_link'] == 'content') {
-            foreach($element[$delta] as &$e){
-              if(isset($e['#path']['path'])){
-                $e['#path'] = entity_uri($entity_type, $entity);
+            if ($display['settings']['image_link'] == 'content') {
+              foreach($element[$delta] as &$e){
+                if(isset($e['#path']['path'])){
+                  $e['#path'] = entity_uri($entity_type, $entity);
+                }
               }
             }
           }
