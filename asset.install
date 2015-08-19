@@ -240,5 +240,6 @@ function asset_update_7002(&$sandbox) {
   $schema = asset_schema();
   if (!db_field_exists('asset', 'status')) {
     db_add_field('asset', 'status', $schema['asset']['fields']['status']);
+    drupal_flush_all_caches();
   }
 }
