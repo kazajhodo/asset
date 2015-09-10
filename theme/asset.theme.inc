@@ -4,16 +4,20 @@
 /**
  * Preprocess asset entities. Add instance widget formatters to output.
  */
-function _asset_preprocess_entity(&$vars) {
+function _asset_preprocess_asset(&$vars) {
   $asset = $vars['asset'];
   $instance = $asset->instance;
   $asset_type = asset_type_load($asset->type);
   $key = 'asset-' . $asset->id . '-' . $asset->instance->id;
   $vars['classes_array'] = array();
-  $vars['classes_array'][] = drupal_html_class('asset-' . $asset->type);
-  $vars['classes_array'][] = drupal_html_class('asset-view-' . $vars['view_mode']);
+  $vars['classes_array'][] = 'asset';
+  $vars['classes_array'][] = drupal_html_class($asset->type);
+  $vars['classes_array'][] = drupal_html_class($vars['view_mode']);
   $vars['classes_array'][] = $key;
   $vars['element_type'] = 'div';
+
+  // Add default teaser override option.
+  array_splice($vars['theme_hook_suggestions'], 1, 0, array('asset__' . $vars['view_mode']));
 
   if(!empty($asset_type->data['render_title'])){
     $display = $vars['view_mode'];
@@ -246,4 +250,124 @@ function theme_asset_usage_link($vars){
 function theme_asset_add_list($vars) {
   $content = $vars['content'];
   return theme('node_add_list', array('content' => $content));
+}
+
+/**
+ * Implements theme_field().
+ */
+function theme_asset_field($vars) {
+  $output = '';
+  if (!$vars['label_hidden']) {
+    $output .= '<' . $vars['element_type'] . ' ' . $vars['title_attributes'] . '>' . $vars['label'] . (!empty($vars['no_colon']) ? '' : ':') . '&nbsp;</' . $vars['element_type'] . '>';
+  }
+  if(count($vars['items']) > 1){
+    $output .= '<' . $vars['element_type'] . ' class="field-items"' . $vars['content_attributes'] . '>';
+  }
+  foreach ($vars['items'] as $item) {
+    $output .= drupal_render($item);
+  }
+  if(count($vars['items']) > 1){
+    $output .= '</' . $vars['element_type'] . '>';
+  }
+  $output = '<' . $vars['element_type'] . ' class="' . $vars['classes'] . '" attributes="' . $vars['attributes'] . '">' . $output . '</' . $vars['element_type'] . '>';
+  return $output;
+}
+
+/**
+ * Returns HTML for a link to a file.
+ *
+ * @param $vars
+ *   An associative array containing:
+ *   - file: A file object to which the link will be created.
+ *   - icon_directory: (optional) A path to a directory of icons to be used for
+ *     files. Defaults to the value of the "file_icon_directory" variable.
+ *
+ * @ingroup themeable
+ */
+function theme_asset_file_link($vars) {
+  $file = $vars['file'];
+  $icon_directory = drupal_get_path('module', 'asset') . '/images/icons';
+  $ext = pathinfo($file->uri, PATHINFO_EXTENSION);
+  $label = '';
+  if($vars['show_download']){
+    $label = '<span class="file-label file-tag">' . file_create_label($ext) . '</span><span class="file-download file-tag">'.t('Download').'</span>';
+  }
+
+  $url = file_create_url($file->uri);
+  $icon = theme('asset_file_icon', array('file' => $file, 'icon_directory' => $icon_directory));
+
+  // Add CSS
+  drupal_add_css(drupal_get_path('module','asset') . '/css/asset.widget.file.icon.scss', array('group' => CSS_SYSTEM));
+
+  // Set options as per anchor format described at
+  // http://microformats.org/wiki/file-format-examples
+  $options = array(
+    'html' => TRUE,
+    'attributes' => array(
+      'type' => $file->filemime . '; length=' . $file->filesize,
+    ),
+  );
+
+  $link_text = '';
+  if($vars['show_title']){
+    // Use the description as the link text if available.
+    if (empty($file->description)) {
+      $link_text = $file->filename;
+    }
+    else {
+      $link_text = $file->description;
+      $options['attributes']['title'] = check_plain($file->filename);
+    }
+    $link_text = '<span class="file-text">'.$link_text.'</span>';
+  }
+
+  return '<span class="asset icon file ' . $ext . '">' . l($label . $icon . $link_text, $url, $options) . '</span>';
+}
+
+/**
+ * Returns HTML for an image with an appropriate icon for the given file.
+ *
+ * @param $vars
+ *   An associative array containing:
+ *   - file: A file object for which to make an icon.
+ *   - icon_directory: (optional) A path to a directory of icons to be used for
+ *     files. Defaults to the value of the "file_icon_directory" variable.
+ *
+ * @ingroup themeable
+ */
+function theme_asset_file_icon($vars) {
+  $file = $vars['file'];
+  $icon_directory = $vars['icon_directory'];
+
+  $mime = check_plain($file->filemime);
+  $icon_url = file_icon_url($file, $icon_directory);
+  return '<img class="file-icon" alt="" title="' . $mime . '" src="' . $icon_url . '" />';
+}
+
+/**
+ * Get a human-readable label for file objects.
+ */
+function file_create_label($ext){
+  $label = 'File';
+  switch($ext){
+    case 'doc':
+    case 'docx':
+      $label = 'Doc';
+      break;
+    case 'xls':
+    case 'xlsx':
+      $label = 'Excel';
+      break;
+    case 'zip':
+      $label = 'Zip';
+      break;
+    case 'ppt':
+    case 'pptx':
+      $label = 'Powerpoint';
+      break;
+    case 'pdf':
+      $label = 'PDF';
+      break;
+  }
+  return $label;
 }

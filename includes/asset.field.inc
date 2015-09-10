@@ -81,6 +81,7 @@ function asset_preprocess_field(&$vars) {
     }
   }
   if(is_a($vars['element']['#object'], 'Asset')){
+    $vars['theme_hook_suggestions'][] = 'field__asset';
     $vars['theme_hook_suggestions'][] = 'field__asset__' . $vars['element']['#field_name'];
     $vars['element_type'] = isset($vars['element']['#element_type']) ? $vars['element']['#element_type'] : 'div';
   }
