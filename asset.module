@@ -228,33 +228,43 @@ function asset_theme() {
     'asset_add_list' => array(
       'variables' => array('content' => array()),
       'file' => 'asset.theme.inc',
-      'path' => drupal_get_path('module', 'asset') . '/theme'
+      'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
     'asset' => array(
       'render element' => 'elements',
       'template' => 'asset',
       'file' => 'asset.theme.inc',
-      'path' => drupal_get_path('module', 'asset') . '/theme'
+      'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
     'asset_usage' => array(
       'variables' => array('usage' => array()),
       'file' => 'asset.theme.inc',
-      'path' => drupal_get_path('module', 'asset') . '/theme'
+      'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
     'asset_usage_instance' => array(
       'variables' => array('usage' => array()),
       'file' => 'asset.theme.inc',
-      'path' => drupal_get_path('module', 'asset') . '/theme'
+      'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
     'asset_usage_link' => array(
       'variables' => array('use' => array()),
       'file' => 'asset.theme.inc',
-      'path' => drupal_get_path('module', 'asset') . '/theme'
+      'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
-    'asset_field' => array(
-      'variables' => array('use' => array()),
+    // 'asset_field' => array(
+    //   'variables' => array('use' => array()),
+    //   'file' => 'asset.theme.inc',
+    //   'path' => drupal_get_path('module', 'asset') . '/theme',
+    // ),
+    'asset_file_link' => array(
+      'variables' => array('file' => NULL, 'icon_directory' => NULL, 'show_download' => TRUE, 'show_title' => TRUE),
       'file' => 'asset.theme.inc',
-      'path' => drupal_get_path('module', 'asset') . '/theme'
+      'path' => drupal_get_path('module', 'asset') . '/theme',
+    ),
+    'asset_file_icon' => array(
+      'variables' => array('file' => NULL, 'icon_directory' => NULL),
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
   );
   $instances = field_info_instances('asset');
@@ -264,7 +274,7 @@ function asset_theme() {
       if($field['entity_type'] == 'asset'){
         $theme['field__asset__' . $field_id] = array(
           'render element' => 'element',
-          'template' => 'field--asset',
+          'function' => 'theme_asset_field',
           'path' => drupal_get_path('module', 'asset') . '/theme',
           'base hook' => 'asset',
         );
@@ -389,11 +399,20 @@ function asset_permission() {
       "edit any $type_name asset" => array(
         'title' => t('%type_name: Edit any asset', array('%type_name' => $asset_type->title)),
       ),
+      "edit own $type_name asset" => array(
+        'title' => t('%type_name: Edit own asset', array('%type_name' => $asset_type->title)),
+      ),
       "view any $type_name asset" => array(
         'title' => t('%type_name: View any asset', array('%type_name' => $asset_type->title)),
       ),
+      "view own $type_name asset" => array(
+        'title' => t('%type_name: View own asset', array('%type_name' => $asset_type->title)),
+      ),
       "delete any $type_name asset" => array(
         'title' => t('%type_name: Delete any asset', array('%type_name' => $asset_type->title)),
+      ),
+      "delete own $type_name asset" => array(
+        'title' => t('%type_name: Delete own asset', array('%type_name' => $asset_type->title)),
       ),
     );
   }
@@ -430,8 +449,11 @@ function asset_access($op, $asset = NULL, $account = NULL) {
     if (user_access("$op any $type_name asset", $account)) {
       return TRUE;
     }
+    if ($account && user_access("$op own $type_name asset", $account) && $account->uid == $asset->uid && $account->uid != 0) {
+      return TRUE;
+    }
   }
-  if (isset($asset) && is_string($asset) && $type_name = $asset) {
+  elseif (isset($asset) && is_string($asset) && $type_name = $asset) {
     $op = ($op == 'view') ? 'view' : 'edit';
     if (user_access("$op any $type_name asset", $account)) {
       return TRUE;
@@ -490,7 +512,8 @@ function asset_render($asset, $view_mode = 'default', $preview = FALSE) {
 function asset_preprocess_entity(&$vars) {
   if(empty($vars['asset']) || empty($vars['asset']->instance)) return;
   module_load_include('inc', 'asset', 'theme/asset.theme');
-  drupal_alter('preprocess_asset', $vars);
+
+  _asset_preprocess_asset($vars);
 
   foreach (module_implements('preprocess_asset') as $module) {
     $function = $module . '_preprocess_asset';
@@ -508,8 +531,6 @@ function asset_preprocess_entity(&$vars) {
   if (function_exists($function)) {
     $function($vars);
   }
-
-  _asset_preprocess_entity($vars);
 }
 
 /**
@@ -757,14 +778,16 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
 
   $args = array();
   if($view = views_get_view('asset_browser')){
+    $args[] = $js_load_assets; // Load js assets
+    $args[] = $view_mode; // View Mode
+    $args[] = TRUE; // Asset Preview
     $view->set_arguments($args);
     $view->set_display($asset_type->type);
     // $view->set_items_per_page($results_per_page);
     $view->execute();
     $count = count( $view->result );
-    $view->asset_view_mode = $view_mode;
-    $view->asset_preview = TRUE;
-    $view->asset_js_load = $js_load_assets;
+    // $view->asset_view_mode = $view_mode;
+    // $view->asset_preview = TRUE;
     $output['view']['#markup'] = $view->preview($asset_type->type, $args);
     $view->destroy();
   }
