@@ -14,7 +14,7 @@
   text-align: center;
 }
 
-.asset-browser .views-row{
+.asset-browser .asset-browser-items{
   position:relative;
   display:inline-block;
   overflow:hidden;
@@ -29,7 +29,7 @@
   overflow:hidden;
 }
 
-.asset-browser .views-row .views-field-title{
+.asset-browser .asset-browser-items .views-field-title{
   position:absolute;
   bottom:0;
   left:0;
@@ -40,15 +40,13 @@
   padding:5px;
 }
 
-.asset-browser .views-row .views-field-field-asset-file{
-  padding-top:30px;
+.asset-browser .asset-browser-items .asset.file.icon{
+  padding-top:8px;
+  text-align: center;
+  display:block;
 }
 
-.asset-browser .views-row .views-field-field-asset-file a{
-  display:none;
-}
-
-.asset-browser .views-row .asset-select{
+.asset-browser .asset-browser-items .asset-select{
   position:absolute;
   left:0;
   right:0;
@@ -66,7 +64,7 @@
   transition: background .3s ease-out;
 }
 
-.asset-browser .views-row .asset-select span{
+.asset-browser .asset-browser-items .asset-select span{
   margin-top:-50px;
   display:block;
   text-align: center;
@@ -76,15 +74,15 @@
   transition: margin .3s ease-out;
 }
 
-.asset-browser .views-row .asset-select:hover{
+.asset-browser .asset-browser-items .asset-select:hover{
   background-color:rgba(0,0,0, .5);
 }
 
-.asset-browser .views-row .asset-select:hover span{
+.asset-browser .asset-browser-items .asset-select:hover span{
   margin-top:18px;
 }
 
-.asset-browser .views-row .asset-select:focus{
+.asset-browser .asset-browser-items .asset-select:focus{
   outline: none;
 }
 
@@ -145,6 +143,6 @@
   margin-top:10px;
 }
 
-.asset-inline-entity-browser fieldset.ief-form .asset-browser .views-row{
+.asset-inline-entity-browser fieldset.ief-form .asset-browser .asset-browser-items{
   border:1px solid #545454;
 }
