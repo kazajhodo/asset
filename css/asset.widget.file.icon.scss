@@ -1,0 +1,103 @@
+$global-radius: 3px !default;
+
+$include-asset-file-color-classes: true !default;
+
+$asset-file-width: rem-calc(72) !default;
+
+$asset-file-tag-bg: #747474 !default;
+$asset-file-tag-radius: $global-radius !default;
+$asset-file-tag-padding: rem-calc(4) !default;
+$asset-file-tag-font-color: #fff !default;
+$asset-file-tag-font-size: rem-calc(10) !default;
+$asset-file-tag-line-height: rem-calc(10) !default;
+
+$asset-file-text-font-color: #494949 !default;
+$asset-file-text-font-size: rem-calc(10) !default;
+$asset-file-text-line-height: rem-calc(10) !default;
+$asset-file-text-padding: rem-calc(4 0 0) !default;
+
+$asset-file-icon-width: $asset-file-width !default;
+$asset-file-icon-height: rem-calc(63) !default;
+
+$asset-file-type-pdf-bg: #D72900 !default;
+$asset-file-type-xls-bg: #1E7D4A !default;
+$asset-file-type-doc-bg: #29569A !default;
+$asset-file-type-ppt-bg: #D2461C !default;
+$asset-file-type-zip-bg: #597390 !default;
+
+.asset.icon.file{
+  position: relative;
+  display:inline-block;
+  width:$asset-file-width;
+  text-align: center;
+
+  .file-tag{
+    position: absolute;
+    top:($asset-file-icon-height/2) - ($asset-file-tag-line-height);
+    left:0;
+    background: $asset-file-tag-bg;
+    padding:$asset-file-tag-padding;
+    font-size: $asset-file-tag-font-size;
+    line-height: $asset-file-tag-line-height;
+    color: $asset-file-tag-font-color;
+    text-transform: uppercase;
+    border-radius: $asset-file-tag-radius;
+  }
+
+  .file-download{
+    display:none;
+  }
+
+  &:hover{
+    .file-tag{
+      display:none;
+    }
+    .file-download{
+      display:block;
+    }
+  }
+
+  .file-text{
+    display:block;
+    padding:$asset-file-text-padding;
+    font-size: $asset-file-text-font-size;
+    line-height: $asset-file-text-line-height;
+    color: $asset-file-text-font-color;
+    text-align: center;
+  }
+
+  .file-icon{
+    width: $asset-file-icon-width;
+    height: $asset-file-icon-height;
+  }
+}
+
+@if $include-asset-file-color-classes {
+
+  .asset.icon.file{
+
+    &.pdf .file-tag{
+      background:$asset-file-type-pdf-bg;
+    }
+
+    &.xls .file-tag,
+    &.xlsx .file-tag{
+      background:$asset-file-type-xls-bg;
+    }
+
+    &.doc .file-tag,
+    &.docx .file-tag{
+      background:$asset-file-type-doc-bg;
+    }
+
+    &.ppt .file-tag,
+    &.pptx .file-tag{
+      background:$asset-file-type-ppt-bg;
+    }
+
+    &.zip .file-tag{
+      background:$asset-file-type-zip-bg;
+    }
+  }
+
+}
