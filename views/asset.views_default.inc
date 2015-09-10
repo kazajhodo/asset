@@ -77,6 +77,7 @@ function asset_views_default_asset_browser() {
   $handler->display->display_options['pager']['options']['id'] = '0';
   $handler->display->display_options['pager']['options']['quantity'] = '9';
   $handler->display->display_options['style_plugin'] = 'default';
+  $handler->display->display_options['style_options']['row_class'] = 'asset-browser-items';
   $handler->display->display_options['row_plugin'] = 'fields';
   /* No results behavior: Global: Unfiltered text */
   $handler->display->display_options['empty']['area_text_custom']['id'] = 'area_text_custom';
@@ -138,7 +139,7 @@ function asset_views_default_asset_browser() {
     }
 
     elseif(isset($has_field['video_embed_field'])){
-      /* Field: Asset: Image */
+      /* Field: Asset: Video Embed */
       list($field_name, $field, $instance) = reset($has_field['video_embed_field']);
       $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
       $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
@@ -153,7 +154,7 @@ function asset_views_default_asset_browser() {
     }
 
     elseif(isset($has_field['file'])){
-      /* Field: Asset: Image */
+      /* Field: Asset: File */
       list($field_name, $field, $instance) = reset($has_field['file']);
       $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
       $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
@@ -161,7 +162,11 @@ function asset_views_default_asset_browser() {
       $handler->display->display_options['fields'][$field_name]['label'] = '';
       $handler->display->display_options['fields'][$field_name]['element_label_colon'] = FALSE;
       $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'fid';
-      $handler->display->display_options['fields'][$field_name]['type'] = 'file_mime_type_icon';
+      $handler->display->display_options['fields']['job_file']['type'] = 'asset_file_icon';
+      $handler->display->display_options['fields']['job_file']['settings'] = array(
+        'show_title' => 0,
+        'show_download' => 0,
+      );
     }
 
     elseif(isset($has_field['entityreference'])){
