@@ -4,16 +4,17 @@
  * Implements hook_form_FIELD_UI_FIELD_EDIT_FORM_alter().
  */
 function asset_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
+  if(isset($form['instance'])){
+    // Get allowed field and widget types.
+    $allowed_field_types = asset_allowed_field_types();
+    $allowed_field = in_array($form['#field']['type'], $allowed_field_types);
+    $allowed_widget_types = asset_allowed_widget_types();
+    $allowed_widget = in_array($form['instance']['widget']['type']['#value'], $allowed_widget_types);
 
-  // Get allowed field and widget types.
-  $allowed_field_types = asset_allowed_field_types();
-  $allowed_field = in_array($form['#field']['type'], $allowed_field_types);
-  $allowed_widget_types = asset_allowed_widget_types();
-  $allowed_widget = in_array($form['instance']['widget']['type']['#value'], $allowed_widget_types);
-
-  // Add the asset settings to the field instance form.
-  if ($allowed_field  && $allowed_widget) {
-    asset_form_field_form($form, $form_state);
+    // Add the asset settings to the field instance form.
+    if ($allowed_field  && $allowed_widget) {
+      asset_form_field_form($form, $form_state);
+    }
   }
 }
 
