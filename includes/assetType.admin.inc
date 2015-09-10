@@ -228,6 +228,13 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
     '#default_value' => $asset_type->data['path'],
   );
 
+  $form['data']['title_label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title label'),
+    '#description' => t('Used to describe the title field on asset creation forms. Defaults to %default.', array('%default' => '"[asset type] Title"')),
+    '#default_value' => $asset_type->data['title_label'],
+  );
+
   $form['data']['auto_title'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide the title field'),

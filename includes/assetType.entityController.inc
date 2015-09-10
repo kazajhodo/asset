@@ -13,6 +13,7 @@ class AssetTypeController extends EntityAPIControllerExportable {
     return array(
       'icon'                => '',
       'path'                => '',
+      'title_label'         => '',
       'auto_title'          => 0,
       'auto_title_pattern'  => '',
       'render_title'        => 0,

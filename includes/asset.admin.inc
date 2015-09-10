@@ -284,7 +284,7 @@ function asset_edit_form($form, &$form_state, $asset) {
   if(empty($asset_type->data['auto_title'])){
     $form['title'] = array(
       '#type'          => 'textfield',
-      '#title'         => t($asset_type->title . ' Name'),
+      '#title'         => !empty($asset_type->data['title_label']) ? t($asset_type->data['title_label']) : t($asset_type->title . ' Title'),
       '#default_value' => isset($asset->title) ? $asset->title : '',
       '#maxlength'     => 255,
       '#required'      => TRUE,

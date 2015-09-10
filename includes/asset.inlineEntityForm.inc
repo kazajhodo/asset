@@ -27,6 +27,10 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     $defaults['instance_default_creation'] = FALSE;
     if(module_exists('manualcrop')){
       $field = field_info_field(arg(6));
+      if(!$field){
+        // Account fields have different path.
+        $field = field_info_field(arg(5));
+      }
       if($fields = asset_entityreference_contains($field, 'image')){
         $defaults['manualcrop'] = array();
         foreach($fields as $key => $field){
@@ -61,6 +65,14 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       '#title'         => t('Allow default instance to be created/edited'),
       '#default_value' => $this->settings['instance_default_creation'],
     );
+
+    if(count($field['settings']['handler_settings']['target_bundles']) == 1){
+      $asset_type = asset_type_load(reset($field['settings']['handler_settings']['target_bundles']));
+      $form['override_labels']['#default_value'] = TRUE;
+      $form['label_singular']['#default_value'] = strtolower($asset_type->title);
+      $form['label_plural']['#default_value'] = strtolower($asset_type->plural);
+    }
+
     if(module_exists('manualcrop') && $targets = asset_entityreference_contains($field, 'image')){
       module_load_include('inc', 'manualcrop', 'manualcrop.admin');
 
@@ -291,8 +303,8 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       if(!$this->settings['auto_title'] && empty($asset_type->data['auto_title'])){
         $entity_form['title'] = array(
           '#type' => 'textfield',
-          '#title' => t($asset_type->title . ' Name'),
-          '#default_value' => isset($entity->name) ? $entity->name : '',
+          '#title' => !empty($asset_type->data['title_label']) ? t($asset_type->data['title_label']) : t($asset_type->title . ' Title'),
+          '#default_value' => isset($entity->title) ? $entity->title : '',
           '#maxlength' => 255,
           '#required' => TRUE,
           '#weight' => -5,
