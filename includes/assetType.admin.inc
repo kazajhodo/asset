@@ -164,6 +164,8 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
     $asset_type->type = '';
   }
 
+  $form_state['is_new'] = empty($asset_type->type);
+
   $form['title'] = array(
     '#title' => t('Label'),
     '#type' => 'textfield',
@@ -335,6 +337,12 @@ function asset_type_form_submit(&$form, &$form_state) {
   $asset_type = entity_ui_form_submit_build_entity($form, $form_state);
   $asset_type->save();
   drupal_flush_all_caches();
+
+  // Set initial permissions
+  if($form_state['is_new']){
+    _asset_type_default_permission_set($asset_type);
+  }
+
   $form_state['redirect'] = 'admin/structure/assets';
 }
 
@@ -418,4 +426,15 @@ function asset_settings_form($form, &$form_state){
   $form['asset']['#title'] = 'Asset Defaults';
   $form['asset']['#tree'] = TRUE;
   return system_settings_form($form);
+}
+
+/**
+ * Set default permissions on an asset type.
+ */
+function _asset_type_default_permission_set($asset_type){
+  $default_permissions = array(
+    "view any {$asset_type->type} asset",
+  );
+  user_role_grant_permissions(1, $default_permissions);
+  user_role_grant_permissions(2, $default_permissions);
 }
