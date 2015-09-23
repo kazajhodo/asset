@@ -92,7 +92,7 @@ function _asset_preprocess_asset(&$vars) {
   // Full mode view.
   if($vars['view_mode'] === 'full'){
     $vars['content']['#attached']['css'][] = drupal_get_path('module', 'asset') . '/css/asset.full.scss';
-    if(!empty($asset_type->data['usage_info'])){
+    if(!empty($asset_type->data['usage_info']) && entity_access('update', 'asset', $asset)){
       $usage = asset_usage($asset->id);
       $vars['content']['usage'] = array(
         '#theme' => 'asset_usage',
