@@ -204,15 +204,29 @@ function asset_field_extra_fields() {
   $extra = array();
 
   foreach (asset_get_types() as $type) {
-    if (!empty($type->data['render_title'])) {
-      $extra['asset'][$type->type] = array(
-        'display' => array(
-          'title' => array(
-            'label' => t('Title'),
-            'description' => t('Asset module element'),
-            'weight' => -5,
-          ),
+    $extra['asset'][$type->type] = array(
+      'form' => array(
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('Asset element'),
+          'weight' => -5,
         ),
+      ),
+    );
+    if (!empty($type->data['render_title'])) {
+      $extra['asset'][$type->type]['display'] = array(
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('Asset element'),
+          'weight' => -5,
+        ),
+      );
+    }
+    if (!empty($type->data['allow_status'])) {
+      $extra['asset'][$type->type]['form']['status'] = array(
+        'label' => t('Status'),
+        'description' => t('Asset element'),
+        'weight' => 5,
       );
     }
   }
