@@ -40,12 +40,11 @@ class AssetTypeController extends EntityAPIControllerExportable {
   public function create(array $values = array()) {
     // Add values that are specific to our Asset
     $values += array(
-      'id'     => '',
-      'is_new' => TRUE,
-      'title'  => '',
       'type'   => '',
+      'title'  => '',
       'plural' => '',
       'data'   => $this->dataDefaults(),
+      'is_new' => TRUE,
     );
     $asset_type = parent::create($values);
     return $asset_type;
