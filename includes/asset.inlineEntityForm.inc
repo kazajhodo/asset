@@ -282,6 +282,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     $entity = $entity_form['#entity'];
     $asset_type = asset_type_load($entity->type);
     $instance = $entity->instance;
+    $extra = field_info_extra_fields($this->entityType, $entity->type, 'form');
 
     if (!empty($info['fieldable'])) {
       $langcode = entity_language($this->entityType, $entity);
@@ -307,7 +308,15 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
           '#default_value' => isset($entity->title) ? $entity->title : '',
           '#maxlength' => 255,
           '#required' => TRUE,
-          '#weight' => -5,
+          '#weight' => isset($extra['title']['weight']) ? $extra['title']['weight'] : -5,
+        );
+      }
+      if(!empty($asset_type->data['allow_status'])){
+        $entity_form['status'] = array(
+          '#type'          => 'checkbox',
+          '#title'         => t('Published'),
+          '#default_value' => $asset->status,
+          '#weight' => isset($extra['status']['weight']) ? $extra['status']['weight'] : 100,
         );
       }
       field_attach_form($this->entityType, $entity, $entity_form, $form_state, $langcode);
