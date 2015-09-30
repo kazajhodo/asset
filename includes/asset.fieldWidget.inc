@@ -32,7 +32,13 @@ function asset_field_formatter_info() {
     'asset_image' => array(
       'label' => t('ASSET | Image'),
       'field types' => array('entityreference'),
-      'settings' => array('field_name' => '', 'image_style' => '', 'image_link' => '', 'as_url' => FALSE, 'first_only' => FALSE, 'random' => FALSE),
+      'settings' => array(
+        'field_name' => '',
+        'image_style' => '',
+        'image_link' => '',
+        'as_url' => false,
+        'limit' => '',
+        'random' => false),
     ),
     'asset_gallery' => array(
       'label' => t('ASSET | Gallery'),
@@ -46,7 +52,15 @@ function asset_field_formatter_info() {
     'asset_file_icon' => array(
       'label' => t('ASSET | File Icon'),
       'field types' => array('file'),
-      'settings' => array('show_download' => TRUE, 'show_title' => TRUE),
+      'settings' => array('show_download' => true, 'show_title' => true),
+    ),
+    'asset_file_svg' => array(
+      'label' => t('ASSET | SVG'),
+      'field types' => array('file'),
+      'settings' => array(
+        'wrapper_tag' => 'figure',
+        'classes' => null,
+      ),
     ),
   );
 }
