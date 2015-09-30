@@ -23,8 +23,9 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
    */
   public function defaultSettings() {
     $defaults = parent::defaultSettings();
-    $defaults['auto_title'] = FALSE;
-    $defaults['instance_default_creation'] = FALSE;
+    $defaults['auto_title'] = false;
+    $defaults['auto_title_pattern'] = '';
+    $defaults['instance_default_creation'] = false;
     if(module_exists('manualcrop')){
       $field = field_info_field(arg(6));
       if(!$field){
@@ -60,6 +61,19 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       '#title'         => t('Hide title field and automatically generate title'),
       '#default_value' => $this->settings['auto_title'],
     );
+
+    $form['auto_title_pattern'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Pattern for the title'),
+      '#description' => t('Leave blank to use the default generated title.'),
+      '#default_value' => $this->settings['auto_title_pattern'],
+      '#states' => array(
+        'visible' => array(
+          ':input[name="instance[widget][settings][type_settings][auto_title]"]' => array('checked' => true),
+        ),
+      ),
+      '#field_suffix' => module_exists('token') ? theme('token_tree', array('token_types' => array('asset','user'), 'dialog' => true)) : '',
+    );
     $form['instance_default_creation'] = array(
       '#type'          => 'checkbox',
       '#title'         => t('Allow default instance to be created/edited'),
@@ -68,7 +82,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
 
     if(count($field['settings']['handler_settings']['target_bundles']) == 1){
       $asset_type = asset_type_load(reset($field['settings']['handler_settings']['target_bundles']));
-      $form['override_labels']['#default_value'] = TRUE;
+      $form['override_labels']['#default_value'] = true;
       $form['label_singular']['#default_value'] = strtolower($asset_type->title);
       $form['label_plural']['#default_value'] = strtolower($asset_type->plural);
     }
@@ -79,9 +93,9 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       $form['manualcrop'] = array(
         '#type' => 'fieldset',
         '#title' => t('Manual Crop'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#tree' => TRUE,
+        '#collapsible' => true,
+        '#collapsed' => true,
+        '#tree' => true,
         '#element_validate' => array('asset_inline_entity_manualcrop_validate'),
       );
 
@@ -91,7 +105,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         unset($manualcrop['manualcrop']['#parents']);
 
         if($this->settings['manualcrop'][$key]['manualcrop_enable']){
-          $form['manualcrop']['#collapsed'] = FALSE;
+          $form['manualcrop']['#collapsed'] = false;
         }
 
         $form['manualcrop'][$key]['manualcrop_enable'] = $manualcrop['manualcrop']['manualcrop_enable'];
@@ -106,7 +120,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         $manualcrop['manualcrop'] += array(
           '#states' => array(
             'visible' => array(
-              ':input[name="instance[widget][settings][type_settings][manualcrop]['.$key.'][manualcrop_enable]"]' => array('checked' => TRUE),
+              ':input[name="instance[widget][settings][type_settings][manualcrop]['.$key.'][manualcrop_enable]"]' => array('checked' => true),
             ),
           ),
         );
@@ -307,7 +321,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
           '#title' => !empty($asset_type->data['title_label']) ? t($asset_type->data['title_label']) : t($asset_type->title . ' Title'),
           '#default_value' => isset($entity->title) ? $entity->title : '',
           '#maxlength' => 255,
-          '#required' => TRUE,
+          '#required' => true,
           '#weight' => isset($extra['title']['weight']) ? $extra['title']['weight'] : -5,
         );
       }
@@ -324,8 +338,8 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
 
     if($this->settings['instance_default_creation'] || !empty($asset_type->data['require_instance'])){
       $entity_form['instance_form'] = array(
-        '#access' => FALSE,
-        '#tree' => TRUE,
+        '#access' => false,
+        '#tree' => true,
         '#weight' => 10,
       );
       $entity_form['instance_form']['status'] = array(
@@ -335,7 +349,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       );
       $entity_form['instance_form']['data'] = array(
         '#type' => 'fieldset',
-        '#tree' => TRUE,
+        '#tree' => true,
         '#title' => t('Instance Settings')
       );
 
@@ -351,11 +365,11 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       }
 
       if($instance_fields = $instance->widgetFields()){
-        $entity_form['instance_form']['#access'] = TRUE;
+        $entity_form['instance_form']['#access'] = true;
         $parents = asset_parents_to_name($entity_form['#parents']);
         $entity_form['instance_form']['data']['#states'] = array(
           'visible' => array(
-            ':input[name="'.$parents.'[instance_form][status]"]' => array('checked' => TRUE),
+            ':input[name="'.$parents.'[instance_form][status]"]' => array('checked' => true),
           ),
         );
         $entity_form['instance_form']['data'] += $instance_fields;
@@ -384,7 +398,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       '#type' => 'container',
       '#states' => array(
         'visible' => array(
-          ':input[name="'.$parents.'[delete]"]' => array('checked' => TRUE),
+          ':input[name="'.$parents.'[delete]"]' => array('checked' => true),
         ),
       ),
     );
@@ -409,10 +423,12 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
    * Overrides EntityInlineEntityFormController::entityFormSubmit().
    */
   public function entityFormSubmit(&$entity_form, &$form_state) {
+
     parent::entityFormSubmit($entity_form, $form_state);
 
     // Set the title if needed.
-    entity_get_controller('asset')->setTitle($entity_form['#entity']);
+    $pattern = ($this->settings['auto_title'] && $this->settings['auto_title_pattern']) ? $this->settings['auto_title_pattern'] : '';
+    entity_get_controller('asset')->setTitle($entity_form['#entity'], $pattern, $force = true);
   }
 
 }
