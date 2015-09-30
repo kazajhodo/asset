@@ -2,22 +2,22 @@ $global-radius: 3px !default;
 
 $include-asset-file-color-classes: true !default;
 
-$asset-file-width: rem-calc(72) !default;
+$asset-file-width: 72px !default;
 
 $asset-file-tag-bg: #747474 !default;
 $asset-file-tag-radius: $global-radius !default;
-$asset-file-tag-padding: rem-calc(4) !default;
+$asset-file-tag-padding: 4px !default;
 $asset-file-tag-font-color: #fff !default;
-$asset-file-tag-font-size: rem-calc(10) !default;
-$asset-file-tag-line-height: rem-calc(10) !default;
+$asset-file-tag-font-size: 10px !default;
+$asset-file-tag-line-height: 10px !default;
 
 $asset-file-text-font-color: #494949 !default;
-$asset-file-text-font-size: rem-calc(10) !default;
-$asset-file-text-line-height: rem-calc(10) !default;
-$asset-file-text-padding: rem-calc(4 0 0) !default;
+$asset-file-text-font-size: 10px !default;
+$asset-file-text-line-height: 10px !default;
+$asset-file-text-padding: 4px 0 0 !default;
 
 $asset-file-icon-width: $asset-file-width !default;
-$asset-file-icon-height: rem-calc(63) !default;
+$asset-file-icon-height: 63px !default;
 
 $asset-file-type-pdf-bg: #D72900 !default;
 $asset-file-type-xls-bg: #1E7D4A !default;
