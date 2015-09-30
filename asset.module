@@ -26,7 +26,7 @@ function asset_entity_info() {
     'entity class' => 'Asset',
     'controller class' => 'AssetController',
     'base table' => 'asset',
-    'fieldable' => TRUE,
+    'fieldable' => true,
     'entity keys' => array(
       'id' => 'id',
       'bundle' => 'type',
@@ -49,7 +49,7 @@ function asset_entity_info() {
     'view modes' => array(
       'default' => array(
         'label' => t('Default'),
-        'custom settings' => TRUE
+        'custom settings' => true
       ),
     ),
     'admin ui' => array(
@@ -64,12 +64,12 @@ function asset_entity_info() {
         'path wildcard' => '%asset',
         'default settings' => array(
           'default_language' => LANGUAGE_NONE,
-          'hide_language_selector' => FALSE,
+          'hide_language_selector' => false,
         ),
       ),
     ),
     // Stop the redirect modulel from acting on our assets.
-    'redirect' => FALSE,
+    'redirect' => false,
   );
   // The entity that holds information about the entity types.
   $return['asset_type'] = array(
@@ -77,8 +77,8 @@ function asset_entity_info() {
     'entity class' => 'AssetType',
     'controller class' => 'AssetTypeController',
     'base table' => 'asset_type',
-    'fieldable' => FALSE,
-    'exportable' => TRUE,
+    'fieldable' => false,
+    'exportable' => true,
     'bundle of' => 'asset',
     'entity keys' => array(
       'id' => 'type',
@@ -100,8 +100,8 @@ function asset_entity_info() {
     'entity class' => 'AssetInstance',
     'controller class' => 'AssetInstanceController',
     'base table' => 'asset_instance',
-    'fieldable' => FALSE,
-    'exportable' => FALSE,
+    'fieldable' => false,
+    'exportable' => false,
     'entity keys' => array(
       'id' => 'id',
     ),
@@ -133,11 +133,11 @@ function asset_entity_info_alter(&$entity_info) {
     );
   }
   // Add in custom created view modes.
-  if($view_modes = variable_get('asset_view_modes', FALSE)){
+  if($view_modes = variable_get('asset_view_modes', false)){
     foreach($view_modes as $key => $label){
       $entity_info['asset']['view modes'][$key] = array(
         'label' => t($label),
-        'custom settings' => FALSE
+        'custom settings' => false
       );
     }
   }
@@ -271,7 +271,7 @@ function asset_theme() {
     //   'path' => drupal_get_path('module', 'asset') . '/theme',
     // ),
     'asset_file_link' => array(
-      'variables' => array('file' => NULL, 'icon_directory' => NULL, 'show_download' => TRUE, 'show_title' => TRUE),
+      'variables' => array('file' => NULL, 'icon_directory' => NULL, 'show_download' => true, 'show_title' => true),
       'file' => 'asset.theme.inc',
       'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
@@ -371,7 +371,7 @@ function asset_image_default_styles() {
         'data' => array(
           'width' => 770,
           'height' => '',
-          'upscale' => TRUE,
+          'upscale' => true,
         ),
         'weight' => 0,
       ),
@@ -452,28 +452,28 @@ function asset_access($op, $asset = NULL, $account = NULL) {
   if($op == 'instance'){
     // Only allow instance creation if there are active instance widgets.
     if(empty($asset->instance->widgets)){
-      return FALSE;
+      return false;
     }
   }
   if (user_access('administer assets', $account)) {
-    return TRUE;
+    return true;
   }
   if (isset($asset) && is_object($asset) && $type_name = $asset->type) {
     $op = ($op == 'view') ? 'view' : 'edit';
     if (user_access("$op any $type_name asset", $account)) {
-      return TRUE;
+      return true;
     }
     if ($account && user_access("$op own $type_name asset", $account) && $account->uid == $asset->uid && $account->uid != 0) {
-      return TRUE;
+      return true;
     }
   }
   elseif (isset($asset) && is_string($asset) && $type_name = $asset) {
     $op = ($op == 'view') ? 'view' : 'edit';
     if (user_access("$op any $type_name asset", $account)) {
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 /**
@@ -515,7 +515,7 @@ function asset_page_view($asset, $view_mode = 'full') {
 /**
  * Render an inidividual asset.
  */
-function asset_render($asset, $view_mode = 'default', $preview = FALSE) {
+function asset_render($asset, $view_mode = 'default', $preview = false) {
   $asset->asset_preview = $preview;
   return $asset->view($view_mode);
 }
@@ -553,7 +553,7 @@ function asset_preprocess_entity(&$vars) {
  * @param $asset_id
  *   Can be either an asset object or asset id.
  */
-function asset_load_js($asset_id, $instance_id = 0, $view_mode = 'default', $preview = FALSE, $reset = FALSE){
+function asset_load_js($asset_id, $instance_id = 0, $view_mode = 'default', $preview = false, $reset = false){
   $added = &drupal_static(__FUNCTION__);
   $instance_id = is_null($instance_id) ? 0 : $instance_id;
   if(is_a($asset_id, 'Asset')){
@@ -584,11 +584,11 @@ function asset_load_js($asset_id, $instance_id = 0, $view_mode = 'default', $pre
  * @param $reset
  *   A boolean indicating that the internal cache should be reset.
  * @return
- *   A fully-loaded $asset object or FALSE if it cannot be loaded.
+ *   A fully-loaded $asset object or false if it cannot be loaded.
  *
  * @see asset_load_multiple()
  */
-function asset_load($id, $instance_id = NULL, $reset = FALSE) {
+function asset_load($id, $instance_id = NULL, $reset = false) {
   $assets = asset_load_multiple(array($id), array(), $instance_id, $reset);
   return reset($assets);
 }
@@ -605,7 +605,7 @@ function asset_load($id, $instance_id = NULL, $reset = FALSE) {
  * @return
  *   An array of asset objects, indexed by id.
  */
-function asset_load_all_instances($id, $reset = FALSE) {
+function asset_load_all_instances($id, $reset = false) {
   $assets = array();
   if($asset = asset_load($id)){
     $query = new EntityFieldQuery();
@@ -639,7 +639,7 @@ function asset_load_all_instances($id, $reset = FALSE) {
  * @see entity_load()
  * @see asset_load()
  */
-function asset_load_multiple($ids = array(), $conditions = array(), $instance_id = NULL, $reset = FALSE) {
+function asset_load_multiple($ids = array(), $conditions = array(), $instance_id = NULL, $reset = false) {
   $entity_type = 'asset';
   if ($reset) {
     entity_get_controller($entity_type)->resetCache();
@@ -779,7 +779,7 @@ function asset_url($asset, $op = 'view'){
 /**
  * Render the asset browser.
  */
-function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_load_assets = FALSE){
+function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_load_assets = false){
   $output = array();
   $output['#prefix'] = '<div class="asset-browser clearfix">';
   $output['#suffix'] = '</div>';
@@ -794,14 +794,14 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
   if($view = views_get_view('asset_browser')){
     $args[] = $js_load_assets; // Load js assets
     $args[] = $view_mode; // View Mode
-    $args[] = TRUE; // Asset Preview
+    $args[] = true; // Asset Preview
     $view->set_arguments($args);
     $view->set_display($asset_type->type);
     // $view->set_items_per_page($results_per_page);
     $view->execute();
     $count = count( $view->result );
     // $view->asset_view_mode = $view_mode;
-    // $view->asset_preview = TRUE;
+    // $view->asset_preview = true;
     $output['view']['#markup'] = $view->preview($asset_type->type, $args);
     $view->destroy();
   }
@@ -817,7 +817,7 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
  * @param $type
  *   The machine-readable name of a asset type to load.
  * @return
- *   A asset type array or FALSE if $type does not exist.
+ *   A asset type array or false if $type does not exist.
  */
 function asset_type_load($type) {
   return asset_get_types($type);
@@ -826,7 +826,7 @@ function asset_type_load($type) {
 /**
  * Load multiple asset types.
  */
-function asset_type_load_multiple($ids = array(), $conditions = array(), $instance_id = NULL, $reset = FALSE) {
+function asset_type_load_multiple($ids = array(), $conditions = array(), $instance_id = NULL, $reset = false) {
   $entity_type = 'asset_type';
   if ($reset) {
     entity_get_controller($entity_type)->resetCache();
@@ -845,7 +845,7 @@ function asset_type_load_multiple($ids = array(), $conditions = array(), $instan
 function asset_get_types($type_name = NULL) {
   // entity_load will get the Entity controller for our asset entity and call the load
   // function of that object - we are loading entities by name here.
-  $types = entity_load_multiple_by_name('asset_type', isset($type_name) ? array($type_name) : FALSE);
+  $types = entity_load_multiple_by_name('asset_type', isset($type_name) ? array($type_name) : false);
   return isset($type_name) ? reset($types) : $types;
 }
 
@@ -877,11 +877,11 @@ function asset_type_delete(AssetType $type) {
  * @param $reset
  *   A boolean indicating that the internal cache should be reset.
  * @return
- *   A fully-loaded $asset object or FALSE if it cannot be loaded.
+ *   A fully-loaded $asset object or false if it cannot be loaded.
  *
  * @see asset_load_multiple()
  */
-function asset_instance_load($id, $reset = FALSE) {
+function asset_instance_load($id, $reset = false) {
   $asset_instances = asset_instance_load_multiple(array($id), array(), $reset);
   return reset($asset_instances);
 }
@@ -898,7 +898,7 @@ function asset_instance_load($id, $reset = FALSE) {
  * @return
  *   An array of asset objects, indexed by id.
  */
-function asset_instance_load_by_asset($id, $reset = FALSE) {
+function asset_instance_load_by_asset($id, $reset = false) {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'asset_instance')
     ->propertyCondition('asset_id', $id);
@@ -925,7 +925,7 @@ function asset_instance_load_by_asset($id, $reset = FALSE) {
  * @see entity_load()
  * @see asset_load()
  */
-function asset_instance_load_multiple($ids = array(), $conditions = array(), $reset = FALSE) {
+function asset_instance_load_multiple($ids = array(), $conditions = array(), $reset = false) {
   return entity_load('asset_instance', $ids, $conditions, $reset);
 }
 
@@ -1002,7 +1002,7 @@ function asset_instance_cleanup(){
 /**
  * Fetch asset usage.
  */
-function asset_usage($asset_id = NULL, $reset = FALSE){
+function asset_usage($asset_id = NULL, $reset = false){
   $usage = &drupal_static(__FUNCTION__);
   if (!isset($usage)) {
     if (($cache = cache_get('asset_usage')) && !$reset) {
@@ -1029,7 +1029,7 @@ function asset_usage($asset_id = NULL, $reset = FALSE){
  * Get a list of all instances being used.
  */
 function asset_usage_instances(){
-  $usage = asset_usage(NULL, TRUE);
+  $usage = asset_usage(NULL, true);
   $instances = array();
   foreach($usage as $asset){
     // Record any instances used in content.
