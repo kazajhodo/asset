@@ -26,9 +26,10 @@ class asset_handler_edit_field extends asset_handler_link_field {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('edit');
     $id = $values->{$this->aliases['id']};
 
-    $options = array();
-    if(function_exists('fett_icon_link')) fett_icon_link($text, $options, TRUE, TRUE);
+    if(function_exists('fawesome_text')){
+      $text = fawesome_text($text);
+    }
 
-    return l($text, asset_url($id, 'edit'), array('html'=>true));
+    return l($text, asset_url($id, 'edit'), array('html'=>true, 'query' => drupal_get_destination()));
   }
 }

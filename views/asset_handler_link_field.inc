@@ -39,9 +39,12 @@ class asset_handler_link_field extends views_handler_field {
 
   function render($values) {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('View');
-    $options = array();
-    if(function_exists('fett_icon_link')) fett_icon_link($text, $options, TRUE, TRUE);
     $id = $values->{$this->aliases['id']};
-    return l($text, asset_url($id), $options);
+
+    if(function_exists('fawesome_text')){
+      $text = fawesome_text($text);
+    }
+
+    return l($text, asset_url($id), array('html' => true));
   }
 }
