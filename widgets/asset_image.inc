@@ -30,7 +30,7 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
         '#' . $elid => array('checked' => FALSE),
       ),
     );
-    $links = asset_entityreference_contains($field, 'link_field');
+    $links = asset_field_contains($field, $instance, 'link_field');
     foreach($links as $key => $target){
       $target['parents'][] = $target['field_name'];
       $element['image_link']['#options'][$key] = $target['instance']['label'] . ' [' . implode($target['parents'], ' > ') . ']';
@@ -83,7 +83,7 @@ function _asset_widget_asset_image_settings_summary($field, $instance, $view_mod
     $summary .= '<br>' . t('Random: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
   }
   if($settings['image_link'] && !in_array($settings['image_link'], array('content','file'))){
-    $fields = asset_entityreference_contains($field, 'link_field');
+    $fields = asset_field_contains($field, $instance, 'link_field');
     if(isset($fields[$settings['image_link']])){
       $target = $fields[$settings['image_link']];
       $target['parents'][] = $target['field_name'];
@@ -120,7 +120,7 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
 
     // Nested link field support
     if (!in_array($settings['image_link'], array('content','file'))) {
-      $link_fields = asset_entityreference_contains($field, 'link_field');
+      $link_fields = asset_field_contains($field, $instance, 'link_field');
       if(isset($link_fields[$settings['image_link']])){
         $link_target = $link_fields[$settings['image_link']];
         $link_target_entity_wrappers = asset_entityreference_get($entity_type, $entity, $link_target);

@@ -204,15 +204,17 @@ function asset_field_extra_fields() {
   $extra = array();
 
   foreach (asset_get_types() as $type) {
-    $extra['asset'][$type->type] = array(
-      'form' => array(
-        'title' => array(
-          'label' => t('Title'),
-          'description' => t('Asset element'),
-          'weight' => -5,
+    if (empty($type->data['auto_title'])) {
+      $extra['asset'][$type->type] = array(
+        'form' => array(
+          'title' => array(
+            'label' => t('Title'),
+            'description' => t('Asset element'),
+            'weight' => -5,
+          ),
         ),
-      ),
-    );
+      );
+    }
     if (!empty($type->data['render_title'])) {
       $extra['asset'][$type->type]['display'] = array(
         'title' => array(
@@ -1353,6 +1355,31 @@ function asset_token_tool_load(){
 }
 
 /**
+ * Deteremine if current entity instance contains a field of a certain type.
+ */
+function asset_field_contains($field, $instance, $type){
+  $fields = array();
+  if ($field['type'] == 'entityreference' &&
+    isset($field['settings']['handler_settings']['target_bundles']) &&
+    count($field['settings']['handler_settings']['target_bundles']) == 1){
+    $fields = asset_entityreference_contains($field, $type);
+  }
+
+  foreach (field_info_instances($instance['entity_type'], $instance['bundle']) as $field_name => $instace) {
+    $field = field_info_field($field_name);
+    if ($field['type'] == $type) {
+      $fields[$field['field_name']] = array(
+        'field_name' => $field_name,
+        'field' => $field,
+        'instance' => $instance,
+        'parents' => array(),
+      );
+    }
+  }
+  return $fields;
+}
+
+/**
  * Determine if entityreference child contains a field of a certain type.
  */
 function asset_entityreference_contains($field, $type, $parents = array()){
@@ -1382,35 +1409,6 @@ function asset_entityreference_contains($field, $type, $parents = array()){
   }
   return $fields;
 }
-
-// function asset_entityreference_contains_children($field, $type, $parents = array()){
-//   $fields = array();
-//   if ($field['type'] == 'entityreference' &&
-//     isset($field['settings']['handler_settings']['target_bundles']) &&
-//     count($field['settings']['handler_settings']['target_bundles']) == 1){
-
-//     $entity_type = $field['settings']['target_type'];
-//     $bundle = key($field['settings']['handler_settings']['target_bundles']);
-//     $parents[] = $field['field_name'];
-
-//     foreach (field_info_instances($entity_type, $bundle) as $field_name => $instance) {
-//       $field = field_info_field($field_name);
-//       if ($field['type'] == $type) {
-//         $parents[] = $field['field_name'];
-//         $fields[implode($parents, '_')] = array(
-//           'field_name' => $field_name,
-//           'field' => $field,
-//           'instance' => $instance,
-//           'parents' => $parents,
-//         );
-//       }
-//       else{
-//         $fields += asset_entityreference_contains_children($field, $type, $parents);
-//       }
-//     }
-//   }
-//   return $fields;
-// }
 
 /**
  * Get entityreference entity from results of asset_entityreference_contains().
