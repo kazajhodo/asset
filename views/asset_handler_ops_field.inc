@@ -20,7 +20,16 @@ class asset_handler_ops_field extends views_handler_field {
     $links = menu_contextual_links('asset', asset_url($id, 'list'), array($id));
     if (!empty($links)) {
       foreach($links as &$link){
-        $link['query'] = drupal_get_destination();
+        if($destination = $this->view->get_url()){
+          $link['query']['destination'] = $destination;
+        }
+        else{
+          $link['query'] = drupal_get_destination();
+        }
+        if(function_exists('fawesome_text') && $text = fawesome_text($link['title'])){
+          $link['title'] = $text;
+          $link['html'] = true;
+        }
       }
       return theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations'))));
     }
