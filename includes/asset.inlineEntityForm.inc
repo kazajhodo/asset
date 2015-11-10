@@ -292,7 +292,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         $entity_form['title'] = array(
           '#type' => 'textfield',
           '#title' => t($asset_type->title . ' Name'),
-          '#default_value' => isset($entity->name) ? $entity->name : '',
+          '#default_value' => isset($entity->title) ? $entity->title : '',
           '#maxlength' => 255,
           '#required' => TRUE,
           '#weight' => -5,
