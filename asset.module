@@ -451,6 +451,10 @@ function asset_permission() {
  *   Whether access is allowed or not.
  */
 function asset_access($op, $asset = NULL, $account = NULL) {
+  // If no user object is supplied, the access check is for the current user.
+  if (empty($account)) {
+    $account = $GLOBALS['user'];
+  }
   if($op == 'instance'){
     // Only allow instance creation if there are active instance widgets.
     if(empty($asset->instance->widgets)){
@@ -465,7 +469,10 @@ function asset_access($op, $asset = NULL, $account = NULL) {
     if (user_access("$op any $type_name asset", $account)) {
       return true;
     }
-    if ($account && user_access("$op own $type_name asset", $account) && $account->uid == $asset->uid && $account->uid != 0) {
+    if (user_access("$op any $type_name asset", $account)) {
+      return true;
+    }
+    if ($account && user_access("$op own $type_name asset", $account) && $account->uid == $asset->uid) {
       return true;
     }
   }
