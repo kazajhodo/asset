@@ -20,7 +20,10 @@ class asset_handler_ops_field extends views_handler_field {
     $links = menu_contextual_links('asset', asset_url($id, 'list'), array($id));
     if (!empty($links)) {
       foreach($links as &$link){
-        if($destination = $this->view->get_url()){
+        if(isset($_GET['destination'])){
+          $link['query']['destination'] = $_GET['destination'];
+        }
+        elseif($destination = $this->view->get_url()){
           $link['query']['destination'] = $destination;
         }
         else{
