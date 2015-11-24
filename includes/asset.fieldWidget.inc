@@ -101,6 +101,25 @@ function asset_field_formatter_view($entity_type, $entity, $field, $instance, $l
 }
 
 /**
+ * Implements hook_field_group_format_settings_alter().
+ */
+function asset_field_group_format_settings($group) {
+  $field_group_types = field_group_formatter_info();
+  $mode = $group->mode == 'form' ? 'form' : 'display';
+  $formatter = $field_group_types[$mode][$group->format_type];
+  $form = array();
+  if ($group->entity_type == 'asset' && $mode == 'form') {
+    $form['instance_settings']['ief_hide'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Do not show when adding/editing within an Inline Entity Form.'),
+      '#default_value' => isset($group->format_settings['instance_settings']['ief_hide']) ? $group->format_settings['instance_settings']['ief_hide'] : (isset($formatter['instance_settings']['ief_hide']) ? $formatter['instance_settings']['ief_hide'] : ''),
+      '#weight' => 200,
+    );
+  }
+  return $form;
+}
+
+/**
  * Get a link to browse for available tokens.
  *
  * @param mixed $token_types

@@ -472,43 +472,28 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
  * Inline entity form alter
  */
 function _asset_inline_entity_form_entity_form_alter(&$form, &$form_state){
-  return;
-
-  if($form['#entity_type'] != 'asset') return;
-
-  $entity = $form['#entity'];
-  $asset_type = asset_type_load($entity->type);
-  $form['#title'] = t('Add New @title', array('@title' => $asset_type->title));
-
-  $form['actions']['#type'] = 'actions';
-
-  // Bind a submit callback to all ief actions
-  // foreach($form['actions'] as &$field){
-  //   if(is_array($field) && $field['#type'] == 'submit'){
-  //     $field['#submit'][] = 'asset_inline_entity_form_entity_form_submit';
-  //   }
-  // }
-
-  if(isset($form['actions']['ief_add_save'])){
-    $form['actions']['ief_add_save']['#value'] = t('Create @title', array('@title' => $asset_type->title));
-    $form['actions']['ief_add_save']['#attributes']['class'][] = 'primary';
-    $form['actions']['ief_add_save']['#attributes']['class'][] = 'small';
-  }
-
-  if(isset($form['actions']['ief_add_cancel'])){
-    $form['actions']['ief_add_cancel']['#attributes']['class'][] = 'text';
-    $form['actions']['ief_add_cancel']['#attributes']['class'][] = 'small';
-  }
-
-  if(isset($form['actions']['ief_edit_save'])){
-    $form['actions']['ief_edit_save']['#value'] = t('Update @title', array('@title' => $asset_type->title));
-    $form['actions']['ief_edit_save']['#attributes']['class'][] = 'primary';
-    $form['actions']['ief_edit_save']['#attributes']['class'][] = 'small';
-  }
-
-  if(isset($form['actions']['ief_edit_cancel'])){
-    $form['actions']['ief_edit_cancel']['#attributes']['class'][] = 'text';
-    $form['actions']['ief_edit_cancel']['#attributes']['class'][] = 'small';
+  if(isset($form['#groups'])){
+    $ief_hide = array();
+    $ief_show = array();
+    foreach($form['#groups'] as $group){
+      if(!empty($group->format_settings['instance_settings']['ief_hide'])){
+        $ief_hide[] = $group->group_name;
+      }
+      else{
+        $ief_show[] = $group->group_name;
+      }
+    }
+    if(!empty($ief_hide)){
+      field_group_hide_field_groups($form, $ief_hide);
+      if(!empty($ief_show)){
+        foreach($ief_show as $group_name){
+          $group = &$form['#groups'][$group_name];
+          if($group->format_type == 'tab'){
+            $group->format_type = 'fieldset';
+          }
+        }
+      }
+    }
   }
 }
 
