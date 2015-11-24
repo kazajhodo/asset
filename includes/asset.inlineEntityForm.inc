@@ -264,7 +264,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
             }
             $fields[$field_name] = array(
               'type' => 'field',
-              'label' => $target['instance']['label'],
+              'label' => $instance['label'],
               'formatter' => 'asset_image',
               'settings' => array('field_name' => $key, 'image_style' => $image_style),
               'delta' => 0,
