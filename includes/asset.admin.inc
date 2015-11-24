@@ -430,7 +430,7 @@ function asset_edit_form_submit($form, &$form_state) {
   }
   $asset = entity_ui_controller('asset')->entityFormSubmitBuildEntity($form, $form_state);
   $asset->save();
-  $form_state['redirect'] = 'asset/' . $asset->id;
+  $form_state['redirect'] = asset_url($asset);
 }
 
 /**
