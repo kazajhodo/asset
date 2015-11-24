@@ -558,6 +558,15 @@ function asset_preprocess_entity(&$vars) {
 }
 
 /**
+ * Implements template_preprocess_page().
+ */
+function asset_preprocess_page(&$vars) {
+  if($asset = menu_get_object('asset')){
+    $vars['asset'] = $asset;
+  }
+}
+
+/**
  * Load an asset and place a rendered version of it in javascript.
  *
  * @param $asset_id
