@@ -27,6 +27,11 @@ function asset_token_info() {
     'description' => t('The asset type of the asset.'),
   );
 
+  $asset['type_clean'] = array(
+    'name' => t('Asset Type Clean'),
+    'description' => t('The asset type of the asset with underscores converted to dashes.'),
+  );
+
   $asset['title'] = array(
     'name' => t('Asset Title'),
     'description' => t('The asset title/name/label.'),
@@ -79,6 +84,11 @@ function asset_tokens($type, $tokens, array $data = array(), array $options = ar
         // Simple key values on the asset.
         case 'type':
           $replacements[$original] = $asset->type;
+          break;
+
+        // Simple key values on the asset.
+        case 'type_clean':
+          $replacements[$original] = str_replace('_', '-', $asset->type);
           break;
 
         case 'title':

@@ -84,7 +84,7 @@ class AssetUIController extends EntityDefaultUIController {
       $path = !empty($type->data['path']) ? $type->data['path'] : $this->path . '/' . str_replace('_','-',$type->type);
 
       $items[$this->path . '/add/' . $type->type] = array(
-        'title' => 'Add ' . $type->title,
+        'title' => $type->title,
         'page callback' => 'asset_form_wrapper',
         'page arguments' => array($type->type),
         'access callback' => 'asset_access',

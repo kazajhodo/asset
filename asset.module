@@ -766,13 +766,13 @@ function asset_url($asset, $op = 'view'){
     $asset = asset_create(array('type' => $asset));
   }
   $asset_type = $asset->type;
-  $base = 'admin/content/assets/[asset:type]';
+  $base = 'admin/content/assets/[asset:type_clean]';
   $defaults = array(
-    'create' => 'admin/content/assets/add/[asset:type]',
+    'create' => 'admin/content/assets/add/[asset:type_clean]',
     'list' => 'admin/content/assets',
-    'view' => 'admin/content/assets/[asset:type]/[asset:id]',
-    'edit' => 'admin/content/assets/[asset:type]/[asset:id]/edit',
-    'delete' => 'admin/content/assets/[asset:type]/[asset:id]/delete',
+    'view' => 'admin/content/assets/[asset:type_clean]/[asset:id]',
+    'edit' => 'admin/content/assets/[asset:type_clean]/[asset:id]/edit',
+    'delete' => 'admin/content/assets/[asset:type_clean]/[asset:id]/delete',
   );
   $op = isset($defaults[$op]) ? $op : 'view';
   $url = $defaults[$op];
