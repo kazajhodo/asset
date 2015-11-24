@@ -81,6 +81,8 @@ class AssetUIController extends EntityDefaultUIController {
 
     // Add menu items to add each different type of entity.
     foreach (asset_get_types() as $type) {
+      $path = !empty($type->data['path']) ? $type->data['path'] : $this->path . '/' . str_replace('_','-',$type->type);
+
       $items[$this->path . '/add/' . $type->type] = array(
         'title' => 'Add ' . $type->title,
         'page callback' => 'asset_form_wrapper',
@@ -90,14 +92,14 @@ class AssetUIController extends EntityDefaultUIController {
         'file' => 'asset.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
       );
-      if(!empty($type->data['path'])){
-        $custom_id_count = count(explode('/', $type->data['path']));
+      // if(!empty($type->data['path'])){
+        $custom_id_count = count(explode('/', $path));
 
-        $exists = db_query("SELECT COUNT(mlid) AS count FROM {menu_links} WHERE link_path = :path", array(':path' => $type->data['path']))->fetchField();
+        $exists = db_query("SELECT COUNT(mlid) AS count FROM {menu_links} WHERE link_path = :path", array(':path' => $path))->fetchField();
         $path_type = $exists ? MENU_NORMAL_ITEM : MENU_CALLBACK;
 
         // Custom Add
-        $items[$type->data['path'] . '/add'] = array(
+        $items[$path . '/add'] = array(
           'title' => 'Add ' . $type->title,
           'page callback' => 'asset_form_wrapper',
           'page arguments' => array($type->type),
@@ -107,105 +109,127 @@ class AssetUIController extends EntityDefaultUIController {
           'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
           'type' => $path_type,
         );
-        // Custom View
-        $items[$type->data['path'] . '/' . $wildcard] = array(
-          'title arguments' => array($custom_id_count),
-          'page arguments' => array($custom_id_count),
-          'access arguments' => array('view', $custom_id_count),
-          'type' => $path_type,
-        ) + $view_base;
-        $items[$type->data['path'] . '/' . $wildcard . '/view'] = array(
-          'title' => 'View',
-          'type' => MENU_DEFAULT_LOCAL_TASK,
-          'weight' => -10,
-        );
-        // Custom Edit
-        $items[$type->data['path'] . '/' . $wildcard . '/edit'] = array(
-          'title' => 'Edit',
-          'title callback' => '',
-          'title arguments' => array($custom_id_count),
-          'page arguments' => array($custom_id_count),
-          'access arguments' => array('edit', $custom_id_count),
-          'type' => MENU_LOCAL_TASK,
-          'weight' => -5,
-        ) + $edit_base;
+
+        if($type->data['viewable']){
+          // Custom View
+          $items[$path . '/' . $wildcard] = array(
+            'title arguments' => array($custom_id_count),
+            'page arguments' => array($custom_id_count),
+            'access arguments' => array('view', $custom_id_count),
+            'type' => $path_type,
+          ) + $view_base;
+          $items[$path . '/' . $wildcard . '/view'] = array(
+            'title' => 'View',
+            'type' => MENU_DEFAULT_LOCAL_TASK,
+            'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+            'weight' => -10,
+          );
+          // Custom Edit
+          $items[$path . '/' . $wildcard . '/edit'] = array(
+            'title' => 'Edit',
+            'title callback' => '',
+            'title arguments' => array($custom_id_count),
+            'page arguments' => array($custom_id_count),
+            'access arguments' => array('edit', $custom_id_count),
+            'type' => MENU_LOCAL_TASK,
+            'weight' => -5,
+          ) + $edit_base;
+        }
+        else{
+          $items[$path . '/' . $wildcard] = array(
+            'title' => 'Edit',
+            'title callback' => '',
+            'title arguments' => array($custom_id_count),
+            'page arguments' => array($custom_id_count),
+            'access arguments' => array('edit', $custom_id_count),
+            'type' => $path_type,
+          ) + $edit_base;
+          $items[$path . '/' . $wildcard . '/edit'] = array(
+            'title' => 'Edit',
+            'type' => MENU_DEFAULT_LOCAL_TASK,
+            'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+            'weight' => -10,
+          );
+
+        }
+
         // Custom Delete
-        $items[$type->data['path'] . '/' . $wildcard . '/delete'] = array(
+        $items[$path . '/' . $wildcard . '/delete'] = array(
           'title' => 'Delete',
           'page arguments' => array('asset_delete_form', $custom_id_count, $custom_id_count + 1),
           'access arguments' => array('delete', $custom_id_count),
           'weight' => 100,
         ) + $delete_base;
-      }
+      // }
     }
 
-    $items[$this->path . '/' . $wildcard] = $edit_base;
+    // $items[$this->path . '/' . $wildcard] = $edit_base;
 
-    $items[$this->path . '/' . $wildcard . '/edit'] = array(
-      'title' => 'Edit',
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => 0,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-    );
+    // $items[$this->path . '/' . $wildcard . '/edit'] = array(
+    //   'title' => 'Edit',
+    //   'type' => MENU_DEFAULT_LOCAL_TASK,
+    //   'weight' => 0,
+    //   'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    // );
 
-    $items[$this->path . '/' . $wildcard . '/delete'] = $delete_base;
+    // $items[$this->path . '/' . $wildcard . '/delete'] = $delete_base;
 
-    $items[$this->path . '/' . $wildcard . '/instance'] = array(
-      'title' => 'Add Instance',
-      'title callback' => 'asset_instance_create_form_title',
-      'title arguments' => array($id_count),
-      'page callback' => 'asset_instance_form_wrapper',
-      'page arguments' => array($id_count, $id_count + 1),
-      'access callback' => 'asset_access',
-      'access arguments' => array('instance', $id_count),
-      'type' => MENU_LOCAL_TASK,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-      'weight' => -10,
-      'file' => 'assetInstance.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
-    );
+    // $items[$this->path . '/' . $wildcard . '/instance'] = array(
+    //   'title' => 'Add Instance',
+    //   'title callback' => 'asset_instance_create_form_title',
+    //   'title arguments' => array($id_count),
+    //   'page callback' => 'asset_instance_form_wrapper',
+    //   'page arguments' => array($id_count, $id_count + 1),
+    //   'access callback' => 'asset_access',
+    //   'access arguments' => array('instance', $id_count),
+    //   'type' => MENU_LOCAL_TASK,
+    //   'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    //   'weight' => -10,
+    //   'file' => 'assetInstance.admin.inc',
+    //   'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+    // );
 
-    $items[$this->path . '/' . $wildcard . '/instance/%asset_instance'] = array(
-      'title callback' => 'asset_instance_form_title',
-      'title arguments' => array($id_count, $id_count + 2),
-      'page callback' => 'asset_instance_form_wrapper',
-      'page arguments' => array($id_count, $id_count + 2),
-      'access callback' => 'asset_instance_access',
-      'access arguments' => array('edit', $id_count + 2),
-      'weight' => 0,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-      'file' => 'assetInstance.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
-    );
-    $items[$this->path . '/' . $wildcard . '/instance/%asset_instance/edit'] = array(
-      'title' => 'Edit',
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => -10,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-    );
+    // $items[$this->path . '/' . $wildcard . '/instance/%asset_instance'] = array(
+    //   'title callback' => 'asset_instance_form_title',
+    //   'title arguments' => array($id_count, $id_count + 2),
+    //   'page callback' => 'asset_instance_form_wrapper',
+    //   'page arguments' => array($id_count, $id_count + 2),
+    //   'access callback' => 'asset_instance_access',
+    //   'access arguments' => array('edit', $id_count + 2),
+    //   'weight' => 0,
+    //   'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    //   'file' => 'assetInstance.admin.inc',
+    //   'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+    // );
+    // $items[$this->path . '/' . $wildcard . '/instance/%asset_instance/edit'] = array(
+    //   'title' => 'Edit',
+    //   'type' => MENU_DEFAULT_LOCAL_TASK,
+    //   'weight' => -10,
+    //   'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    // );
 
-    $items[$this->path . '/' . $wildcard . '/instance/%asset_instance/delete'] = array(
-      'title' => 'Delete',
-      'title callback' => 'asset_instance_form_title',
-      'title arguments' => array($id_count, $id_count + 2, $id_count + 3),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('asset_instance_delete_form', $id_count, $id_count + 2),
-      'access callback' => 'asset_instance_access',
-      'access arguments' => array('delete', $id_count + 2),
-      'type' => MENU_LOCAL_TASK,
-      'context' => MENU_CONTEXT_INLINE,
-      'weight' => 0,
-      'file' => 'assetInstance.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
-    );
+    // $items[$this->path . '/' . $wildcard . '/instance/%asset_instance/delete'] = array(
+    //   'title' => 'Delete',
+    //   'title callback' => 'asset_instance_form_title',
+    //   'title arguments' => array($id_count, $id_count + 2, $id_count + 3),
+    //   'page callback' => 'drupal_get_form',
+    //   'page arguments' => array('asset_instance_delete_form', $id_count, $id_count + 2),
+    //   'access callback' => 'asset_instance_access',
+    //   'access arguments' => array('delete', $id_count + 2),
+    //   'type' => MENU_LOCAL_TASK,
+    //   'context' => MENU_CONTEXT_INLINE,
+    //   'weight' => 0,
+    //   'file' => 'assetInstance.admin.inc',
+    //   'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+    // );
 
-    // Menu item for viewing assets
-    $items['asset/' . $wildcard] = $view_base;
-    $items['asset/' . $wildcard . '/view'] = array(
-      'title' => 'View',
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => -10,
-    );
+    // // Menu item for viewing assets
+    // $items['asset/' . $wildcard] = $view_base;
+    // $items['asset/' . $wildcard . '/view'] = array(
+    //   'title' => 'View',
+    //   'type' => MENU_DEFAULT_LOCAL_TASK,
+    //   'weight' => -10,
+    // );
 
     return $items;
   }

@@ -17,9 +17,14 @@ class asset_handler_ops_field extends views_handler_field {
 
   function render($values) {
     $id = $this->get_value($values, 'id');
-    $links = menu_contextual_links('asset', asset_url($id, 'list'), array($id));
+
+    $links = menu_contextual_links('asset', asset_url($id, 'view'), array($id));
+
     if (!empty($links)) {
-      foreach($links as &$link){
+      foreach($links as $key => &$link){
+        if($key == 'asset-view'){
+          $link['href'] = str_replace('/view','', $link['href']);
+        }
         if(isset($_GET['destination'])){
           $link['query']['destination'] = $_GET['destination'];
         }

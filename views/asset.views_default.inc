@@ -268,11 +268,11 @@ function asset_views_default_asset_library() {
       'separator' => '&nbsp;&nbsp;',
       'empty_column' => 0,
     ),
-    'asset_link' => array(
-      'align' => '',
-      'separator' => '',
-      'empty_column' => 0,
-    ),
+    // 'asset_link' => array(
+    //   'align' => '',
+    //   'separator' => '',
+    //   'empty_column' => 0,
+    // ),
     'asset_ops' => array(
       'align' => '',
       'separator' => '',
@@ -302,11 +302,11 @@ function asset_views_default_asset_library() {
   $handler->display->display_options['fields']['asset_usage']['id'] = 'asset_usage';
   $handler->display->display_options['fields']['asset_usage']['table'] = 'asset';
   $handler->display->display_options['fields']['asset_usage']['field'] = 'asset_usage';
-  /* Field: Asset: Link */
-  $handler->display->display_options['fields']['asset_link']['id'] = 'asset_link';
-  $handler->display->display_options['fields']['asset_link']['table'] = 'asset';
-  $handler->display->display_options['fields']['asset_link']['field'] = 'asset_link';
-  $handler->display->display_options['fields']['asset_link']['label'] = 'View';
+  // /* Field: Asset: Link */
+  // $handler->display->display_options['fields']['asset_link']['id'] = 'asset_link';
+  // $handler->display->display_options['fields']['asset_link']['table'] = 'asset';
+  // $handler->display->display_options['fields']['asset_link']['field'] = 'asset_link';
+  // $handler->display->display_options['fields']['asset_link']['label'] = 'View';
   /* Field: User: Name */
   $handler->display->display_options['fields']['name_1']['id'] = 'name_1';
   $handler->display->display_options['fields']['name_1']['table'] = 'users';

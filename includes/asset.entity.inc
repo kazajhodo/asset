@@ -14,7 +14,7 @@ class Asset extends Entity {
   }
 
   protected function defaultUri() {
-    return array('path' => 'asset/' . $this->id);
+    return array('path' => asset_url($this));
   }
 
   /**

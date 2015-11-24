@@ -223,6 +223,27 @@ function asset_type_form($form, &$form_state, $asset_type, $op = 'edit') {
     );
   }
 
+  $form['data']['viewable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Provide page view'),
+    '#description' => t('Check if you would like to expose this asset as a full page. Disable if this asset should not be viewable by itself. Defaults to: !view.', array('!view' => '<code>VIEW asset/:asset</code>')),
+    '#default_value' => $asset_type->data['viewable'],
+  );
+
+  if(module_exists('pathauto')){
+    $form['data']['pathauto'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Pathauto Enabled'),
+      '#description' => t('Use Pathauto module to alias assets. !configure.', array('!configure' => l('Configure via Pathauto','admin/config/search/path/patterns'))),
+      '#default_value' => $asset_type->data['pathauto'],
+      '#states' => array(
+        'visible' => array(
+          ':input[name="data[viewable]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+  }
+
   $form['data']['path'] = array(
     '#type' => 'textfield',
     '#title' => t('Custom URL path'),
@@ -364,6 +385,8 @@ function asset_type_widget_form(AssetType $asset_type, &$form_state, $parents = 
     '#title' => t('Instance options'),
     '#description' => t('An asset can have additional settings. These settings allow changing an asset per implementation.'),
     '#element_validate' => array('asset_type_widget_form_validate'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
   );
   $form_state['widgets'] = array();
   foreach($asset_type->widgetLoad() as $widget_id => $widget){

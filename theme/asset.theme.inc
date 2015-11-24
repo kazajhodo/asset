@@ -16,6 +16,12 @@ function _asset_preprocess_asset(&$vars) {
   $vars['classes_array'][] = $key;
   $vars['element_type'] = 'div';
 
+  // Get view path if allowed.
+  $vars['path'] = '';
+  if($asset_type->data['viewable'] && $asset_type->data['pathauto']){
+    $vars['path'] = url(asset_url($asset->id));
+  }
+
   // Add default teaser override option.
   array_splice($vars['theme_hook_suggestions'], 1, 0, array('asset__' . $vars['view_mode']));
 

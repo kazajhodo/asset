@@ -12,6 +12,8 @@ class AssetTypeController extends EntityAPIControllerExportable {
   protected function dataDefaults(){
     return array(
       'icon'                => '',
+      'viewable'            => 0,
+      'pathauto'            => 0,
       'path'                => '',
       'title_label'         => '',
       'auto_title'          => 0,

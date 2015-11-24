@@ -5,6 +5,7 @@ require_once dirname(__FILE__) . '/includes/asset.fieldAdmin.inc';
 require_once dirname(__FILE__) . '/includes/asset.fieldWidget.inc';
 require_once dirname(__FILE__) . '/includes/asset.viewModes.inc';
 require_once dirname(__FILE__) . '/includes/asset.cron.inc';
+require_once dirname(__FILE__) . '/includes/asset.pathauto.inc';
 require_once dirname(__FILE__) . '/plugins/widget/assetWidget.inc';
 
 function asset_init(){
@@ -756,28 +757,41 @@ function asset_url($asset, $op = 'view'){
     $asset = asset_create(array('type' => $asset));
   }
   $asset_type = $asset->type;
-  $base = 'admin/content/assets';
+  $base = 'admin/content/assets/[asset:type]';
   $defaults = array(
-    'view' => 'asset/[asset:id]',
     'create' => 'admin/content/assets/add/[asset:type]',
     'list' => 'admin/content/assets',
-    'edit' => 'admin/content/assets/[asset:id]/edit',
-    'delete' => 'admin/content/assets/[asset:id]/delete',
+    'view' => 'admin/content/assets/[asset:type]/[asset:id]',
+    'edit' => 'admin/content/assets/[asset:type]/[asset:id]/edit',
+    'delete' => 'admin/content/assets/[asset:type]/[asset:id]/delete',
   );
   $op = isset($defaults[$op]) ? $op : 'view';
   $url = $defaults[$op];
-  if($op !== 'view'){
-    if(isset($asset_types[$asset_type]) && !empty($asset_types[$asset_type]->data['path'])){
-      if($op == 'list'){
-        return $asset_types[$asset_type]->data['path'];
-      }
-      if($op == 'create'){
-        return $asset_types[$asset_type]->data['path'] . '/add';
-      }
-      $url = str_replace($base, $asset_types[$asset_type]->data['path'], $url);
+  if(isset($asset_types[$asset_type]) && !empty($asset_types[$asset_type]->data['path'])){
+    if($op == 'list'){
+      return $asset_types[$asset_type]->data['path'];
+    }
+    if($op == 'create'){
+      return $asset_types[$asset_type]->data['path'] . '/add';
+    }
+    $url = str_replace($base, $asset_types[$asset_type]->data['path'], $url);
+  }
+  $url = token_replace($url, array('asset' => $asset));
+  return $url;
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function asset_admin_paths() {
+  $paths = array();
+  foreach (asset_get_types() as $type) {
+    if(!empty($type->data['path'])){
+      $paths[$type->data['path'] . '/*/edit'] = TRUE;
+      $paths[$type->data['path'] . '/*/delete'] = TRUE;
     }
   }
-  return token_replace($url, array('asset' => $asset));
+  return $paths;
 }
 
 
@@ -1457,4 +1471,3 @@ function asset_entityreference_get_wrapper($parents, $wrapper){
   }
   return $wrappers;
 }
-

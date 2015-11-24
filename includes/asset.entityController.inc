@@ -82,6 +82,13 @@ class AssetController extends EntityAPIController {
     // Set the title if none is supplied.
     $this->setTitle($entity);
 
+    // Pathauto
+    $asset_type = asset_type_load($entity->type);
+    if(module_exists('pathauto') && $asset_type->data['viewable'] && $asset_type->data['pathauto']){
+      $op = $entity->is_new ? 'insert' : 'update';
+      asset_update_alias('asset', $entity, $op);
+    }
+
     $return = parent::save($entity, $transaction);
     if($return){
       if(isset($entity->instance) && isset($entity->instance_form)){
