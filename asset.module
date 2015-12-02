@@ -796,8 +796,7 @@ function asset_admin_paths() {
   $paths = array();
   foreach (asset_get_types() as $type) {
     if(!empty($type->data['path'])){
-      $paths[$type->data['path'] . '/*/edit'] = TRUE;
-      $paths[$type->data['path'] . '/*/delete'] = TRUE;
+      $paths[$type->data['path'] . '/*'] = TRUE;
     }
   }
   return $paths;
