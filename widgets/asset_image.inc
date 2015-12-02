@@ -132,6 +132,7 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
         $target_entity_wrapper = $target_entity_wrappers[$delta];
         $target_entity_type = $target_entity_wrapper->type();
         $target_entity = $target_entity_wrapper->value();
+        if(!$target_entity) continue;
         $target_items = field_get_items($target_entity_type, $target_entity, $target['field_name']);
         module_load_include('inc', 'image', 'image.field');
         $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);

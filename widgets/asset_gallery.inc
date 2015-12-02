@@ -110,6 +110,7 @@ function _asset_widget_asset_gallery_view($entity_type, $entity, $field, $instan
         $target_entity_wrapper = $target_entity_wrappers[$delta];
         $target_entity_type = $target_entity_wrapper->type();
         $target_entity = $target_entity_wrapper->value();
+        if(!$target_entity) continue;
         $target_items = field_get_items($target_entity_type, $target_entity, $target['field_name']);
         foreach($target_items as $target_delta => $target_item){
           if($delta === 0){
