@@ -45,8 +45,8 @@ class AssetController extends EntityAPIController {
    * Dymically set the title if needed.
    */
   public function setTitle($entity, $pattern = null, $force = false){
-    if(!isset($this->titleSet) || $force){
-      $this->titleSet = true;
+    if(!isset($entity->titleSet) || $force){
+      $entity->titleSet = true;
       if(!$pattern){
         $asset_type = asset_type_load($entity->type);
         $pattern = !empty($asset_type->data['auto_title_pattern']) ? $asset_type->data['auto_title_pattern'] : null;
