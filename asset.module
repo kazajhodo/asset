@@ -1,5 +1,6 @@
 <?php
 
+require_once dirname(__FILE__) . '/includes/asset.info.inc';
 require_once dirname(__FILE__) . '/includes/asset.field.inc';
 require_once dirname(__FILE__) . '/includes/asset.fieldAdmin.inc';
 require_once dirname(__FILE__) . '/includes/asset.fieldWidget.inc';
@@ -796,7 +797,13 @@ function asset_admin_paths() {
   $paths = array();
   foreach (asset_get_types() as $type) {
     if(!empty($type->data['path'])){
-      $paths[$type->data['path'] . '/*'] = TRUE;
+      if($type->data['viewable']){
+        $paths[$type->data['path'] . '/*'] = FALSE;
+        $paths[$type->data['path'] . '/*/*'] = TRUE;
+      }
+      else{
+        $paths[$type->data['path'] . '/*'] = TRUE;
+      }
     }
   }
   return $paths;
