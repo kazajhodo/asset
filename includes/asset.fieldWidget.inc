@@ -62,6 +62,11 @@ function asset_field_formatter_info() {
         'classes' => null,
       ),
     ),
+    'asset_link' => array(
+      'label' => t('ASSET | Link'),
+      'field types' => array('entityreference'),
+      'settings' => array('icon' => 'file', 'label' => 'Download', 'field_name' => ''),
+    ),
   );
 }
 
