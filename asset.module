@@ -210,7 +210,7 @@ function asset_field_extra_fields() {
       $extra['asset'][$type->type] = array(
         'form' => array(
           'title' => array(
-            'label' => t('Title'),
+            'label' => $type->data['title_label'] ? t($type->data['title_label']) : t('Title'),
             'description' => t('Asset element'),
             'weight' => -5,
           ),
@@ -220,7 +220,7 @@ function asset_field_extra_fields() {
     if (!empty($type->data['render_title'])) {
       $extra['asset'][$type->type]['display'] = array(
         'title' => array(
-          'label' => t('Title'),
+          'label' => $type->data['title_label'] ? t($type->data['title_label']) : t('Title'),
           'description' => t('Asset element'),
           'weight' => -5,
         ),
@@ -1330,11 +1330,16 @@ function asset_form_views_exposed_form_alter(&$form, &$form_state) {
     // and jumps back to the front page because of URL problems. So it's unusable for us.
     //
     // Add class to make it better selectable in JS and CSS
-    $form['submit']['#attributes'] = array('class' => array('views-filter-submit'));
+    // $form['submit']['#attributes'] = array('class' => array('views-filter-submit'));
+    $form['submit']['#attributes']['class'][] = 'views-filter-submit';
     $submit_btn_id = $form['submit']['#id'];
     if (!empty($submit_btn_id) && !empty($form['reset'])) {
+      $classes = array('form-submit', 'ico-remove', 'form-reset', 'views-filter-reset');
+      if(in_array('js-hide', $form['submit']['#attributes']['class'])){
+        $classes[] = 'js-hide';
+      }
       // Add own reset button
-      $form['submit']['#suffix'] = '<button onclick="javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;" class="form-submit ico-remove form-reset views-filter-reset">' . t('Reset') . '</button>';
+      $form['submit']['#suffix'] = '<button onclick="javascript:jQuery(this.form).clearForm();jQuery(this.form).find(\'#' . $submit_btn_id . '\').trigger(\'click\');return false;" class="'.implode(' ', $classes).'">' . t('Reset') . '</button>';
       // Remove the original RESET button.
       unset($form['reset']);
     }
