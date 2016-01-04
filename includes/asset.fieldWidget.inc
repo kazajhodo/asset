@@ -48,6 +48,7 @@ function asset_field_formatter_info() {
     'asset_file' => array(
       'label' => t('ASSET | File'),
       'field types' => array('file'),
+      'settings' => array('title' => ''),
     ),
     'asset_file_icon' => array(
       'label' => t('ASSET | File Icon'),
