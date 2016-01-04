@@ -8,11 +8,12 @@ function _asset_preprocess_asset(&$vars) {
   $asset = $vars['asset'];
   $instance = $asset->instance;
   $asset_type = asset_type_load($asset->type);
+  $view_mode = $vars['view_mode'];
   $key = 'asset-' . $asset->id . '-' . $asset->instance->id;
   $vars['classes_array'] = array();
   $vars['classes_array'][] = 'asset';
   $vars['classes_array'][] = drupal_html_class($asset->type);
-  $vars['classes_array'][] = drupal_html_class($vars['view_mode']);
+  $vars['classes_array'][] = drupal_html_class(($view_mode == 'asset' ? 'asset-vm' : $view_mode));
   $vars['classes_array'][] = $key;
   $vars['element_type'] = 'div';
 
