@@ -57,15 +57,15 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
   public function settingsForm($field, $instance) {
     $form = parent::settingsForm($field, $instance);
     $form['auto_title'] = array(
-      '#type'          => 'checkbox',
-      '#title'         => t('Hide title field and automatically generate title'),
+      '#type' => 'checkbox',
+      '#title' => t('Hide title field and automatically generate title'),
       '#default_value' => $this->settings['auto_title'],
     );
 
     $form['auto_title_pattern'] = array(
       '#type' => 'textfield',
       '#title' => t('Pattern for the title'),
-      '#description' => t('Leave blank to use the default generated title.'),
+      '#description' => t('Leave blank to use the default generated title. The parent title is available by using [parent:title].'),
       '#default_value' => $this->settings['auto_title_pattern'],
       '#states' => array(
         'visible' => array(
@@ -75,8 +75,8 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       '#field_suffix' => module_exists('token') ? theme('token_tree', array('token_types' => array('asset','user'), 'dialog' => true)) : '',
     );
     $form['instance_default_creation'] = array(
-      '#type'          => 'checkbox',
-      '#title'         => t('Allow default instance to be created/edited'),
+      '#type' => 'checkbox',
+      '#title' => t('Allow default instance to be created/edited'),
       '#default_value' => $this->settings['instance_default_creation'],
     );
 
@@ -426,8 +426,22 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
 
     parent::entityFormSubmit($entity_form, $form_state);
 
+
     // Set the title if needed.
     $pattern = ($this->settings['auto_title'] && $this->settings['auto_title_pattern']) ? $this->settings['auto_title_pattern'] : '';
+    if($pattern){
+      $parents = $entity_form['#parents'];
+      if($entity_form['#op'] == 'add'){
+        $parents = array_slice($parents, 0, -3);
+      }
+      else{
+        $parents = array_slice($parents, 0, -5);
+      }
+      if(($parent_entity_values = drupal_array_get_nested_value($form_state['input'], $parents))){
+        $title = !empty($parent_entity_values['title']) ? $parent_entity_values['title'] : '(System)';
+        $pattern = str_replace('[parent:title]', $title, $pattern);
+      }
+    }
     entity_get_controller('asset')->setTitle($entity_form['#entity'], $pattern, $force = true);
   }
 
