@@ -424,13 +424,20 @@ function asset_edit_form_validate($form, &$form_state) {
 function asset_edit_form_submit($form, &$form_state) {
   $values = &$form_state['values'];
   $asset = (object) $form_state['asset'];
+  $asset_type = asset_type_load($asset->type);
   if(!empty($values['instance_form']['status'])){
     $instance = $asset->instance;
     $instance->widgetFieldsSubmit($values['instance_form']['data']);
   }
   $asset = entity_ui_controller('asset')->entityFormSubmitBuildEntity($form, $form_state);
   $asset->save();
-  $form_state['redirect'] = asset_url($asset);
+
+  if($asset_type->data['viewable']){
+    $form_state['redirect'] = asset_url($asset);
+  }
+  else{
+    $form_state['redirect'] = 'admin/content/assets';
+  }
 }
 
 /**
