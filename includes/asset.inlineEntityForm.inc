@@ -7,6 +7,11 @@
 
 class AssetInlineEntityFormController extends EntityInlineEntityFormController{
 
+  public function __construct($entityType, array $settings) {
+    $this->entityType = $entityType;
+    $this->settings = drupal_array_merge_deep($this->defaultSettings(), $settings);
+  }
+
   /**
    * Returns the default entity type labels.
    */
