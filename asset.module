@@ -562,8 +562,17 @@ function asset_preprocess_entity(&$vars) {
  * Implements template_preprocess_page().
  */
 function asset_preprocess_page(&$vars) {
-  if($asset = menu_get_object('asset')){
+  if($asset = asset_menu_get_object()){
     $vars['asset'] = $asset;
+  }
+}
+
+function asset_menu_get_object($path = NULL){
+  $type = 'asset';
+  $router_item = menu_get_item($path);
+  $position = count(explode('/', $router_item['path'])) - 1;
+  if (isset($router_item['load_functions'][$position]) && !empty($router_item['map'][$position]) && $router_item['load_functions'][$position] == $type . '_load') {
+    return $router_item['map'][$position];
   }
 }
 
@@ -798,7 +807,6 @@ function asset_admin_paths() {
   foreach (asset_get_types() as $type) {
     if(!empty($type->data['path'])){
       if($type->data['viewable']){
-        $paths[$type->data['path'] . '/*'] = FALSE;
         $paths[$type->data['path'] . '/*/*'] = TRUE;
       }
       else{

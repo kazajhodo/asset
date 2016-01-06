@@ -153,6 +153,12 @@ function asset_views_plugins() {
         'handler' => 'asset_plugin_argument_validate',
       ),
     ),
+    'argument default' => array(
+      'asset' => array(
+        'title' => t('Asset ID from URL'),
+        'handler' => 'asset_plugin_argument_default_asset'
+      ),
+    ),
   );
 }
 

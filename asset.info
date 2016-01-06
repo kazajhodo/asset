@@ -33,3 +33,4 @@ files[] = views/asset_handler_type_field.inc
 files[] = views/asset_handler_type_filter.inc
 files[] = views/asset_handler_type_argument.inc
 files[] = views/asset_plugin_argument_validate.inc
+files[] = views/asset_plugin_argument_default_asset.inc
