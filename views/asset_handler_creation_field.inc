@@ -20,6 +20,7 @@ class asset_handler_creation_field extends views_handler_field {
         $link = menu_get_item(asset_url($type, 'create'));
         if($link && $link['access']){
           $link['localized_options']['query'] = drupal_get_destination();
+          $link['title'] = 'Add ' . $link['title'];
           $action = array(
             '#theme' => 'menu_local_action__ops',
             '#link' => $link

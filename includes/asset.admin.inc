@@ -100,7 +100,7 @@ class AssetUIController extends EntityDefaultUIController {
 
         // Custom Add
         $items[$path . '/add'] = array(
-          'title' => 'Add ' . $type->title,
+          'title' => $type->title,
           'page callback' => 'asset_form_wrapper',
           'page arguments' => array($type->type),
           'access callback' => 'asset_access',
