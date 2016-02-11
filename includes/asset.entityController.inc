@@ -73,8 +73,10 @@ class AssetController extends EntityAPIController {
    */
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     // Add in created and changed times.
+    $op = 'update';
     if ($entity->is_new = isset($entity->is_new) ? $entity->is_new : 0){
       $entity->created = time();
+      $op = 'insert';
     }
     $entity->changed = time();
     $entity->instance_id = !empty($entity->instance_id) ? $entity->instance_id : NULL;
@@ -82,14 +84,14 @@ class AssetController extends EntityAPIController {
     // Set the title if none is supplied.
     $this->setTitle($entity);
 
+    $return = parent::save($entity, $transaction);
+
     // Pathauto
     $asset_type = asset_type_load($entity->type);
     if(module_exists('pathauto') && $asset_type->data['viewable'] && $asset_type->data['pathauto']){
-      $op = $entity->is_new ? 'insert' : 'update';
       asset_update_alias('asset', $entity, $op);
     }
 
-    $return = parent::save($entity, $transaction);
     if($return){
       if(isset($entity->instance) && isset($entity->instance_form)){
         $instance = $entity->instance;
@@ -176,7 +178,18 @@ class AssetController extends EntityAPIController {
    *   in their transaction object.
    */
   public function delete($ids, DatabaseTransaction $transaction = NULL) {
+
+    foreach($ids as $id){
+      if(module_exists('pathauto')){
+        $asset = asset_load($id);
+        $uri = entity_uri('asset', $asset);
+        // Clean pathauto
+        pathauto_path_delete_all($uri['path']);
+      }
+    }
+
     parent::delete($ids, $transaction);
+
     // When deleting an asset, also delete instances assigned to it.
     foreach($ids as $id){
       foreach(asset_instance_load_by_asset($id) as $instance){

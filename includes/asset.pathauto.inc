@@ -80,6 +80,10 @@ function asset_update_alias($entity_type, $entity, $op, $language = NULL) {
 
   module_load_include('inc', 'pathauto');
   $uri = entity_uri($entity_type, $entity);
+
+  // Clean
+  pathauto_path_delete_all($uri['path']);
+
   return pathauto_create_alias($entity_type, $op, $uri['path'], array($entity_info['token type'] => $entity), $bundle, $language);
 }
 
