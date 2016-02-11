@@ -567,6 +567,9 @@ function asset_preprocess_page(&$vars) {
   }
 }
 
+/**
+ * Get an asset menu object with a variable position.
+ */
 function asset_menu_get_object($path = NULL){
   $type = 'asset';
   $router_item = menu_get_item($path);
@@ -807,6 +810,7 @@ function asset_admin_paths() {
   foreach (asset_get_types() as $type) {
     if(!empty($type->data['path'])){
       if($type->data['viewable']){
+        $paths[$type->data['path'] . '/*'] = FALSE;
         $paths[$type->data['path'] . '/*/*'] = TRUE;
       }
       else{
@@ -1090,6 +1094,21 @@ function asset_usage_instances(){
     }
   }
   return $instances;
+}
+
+/**
+ * Get a list of assets used within a certain entity.
+ */
+function asset_usage_by_entity($entity_type, $entity_id, $field_name = NULL){
+  $query = db_select('asset_usage', 'a')
+    ->fields('a')
+    ->condition('a.entity_type', $entity_type)
+    ->condition('a.entity_id', $entity_id);
+  if($field_name){
+    $query->condition('a.field_name', $field_name);
+  }
+  return $query->execute()
+    ->fetchAll();
 }
 
 /**
