@@ -276,7 +276,7 @@ function theme_asset_field($vars) {
   if(count($vars['items']) > 1){
     $output .= '</' . $vars['element_type'] . '>';
   }
-  $output = '<' . $vars['element_type'] . ' class="' . $vars['classes'] . '" attributes="' . $vars['attributes'] . '">' . $output . '</' . $vars['element_type'] . '>';
+  $output = '<' . $vars['element_type'] . ' class="' . $vars['classes'] . '"' . $vars['attributes'] . '>' . $output . '</' . $vars['element_type'] . '>';
   return $output;
 }
 
