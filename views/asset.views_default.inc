@@ -6,14 +6,18 @@
 function asset_views_default_views() {
   $views = array();
   $views['asset_admin'] = asset_views_default_asset_library();
-  $views['asset_browser'] = asset_views_default_asset_browser();
+
+  foreach(asset_get_types() as $bundle => $asset_type){
+    $views['asset_browser_' . $bundle] = asset_views_default_asset_browser($asset_type);
+  }
+
   return $views;
 }
 
 /**
  * Asset browser default view.
  */
-function asset_views_default_asset_browser() {
+function asset_views_default_asset_browser($asset_type) {
 
   // Common Elements
   $field_title = array();
@@ -35,7 +39,9 @@ function asset_views_default_asset_browser() {
   $filter_asset_type['type']['table'] = 'asset';
   $filter_asset_type['type']['field'] = 'type';
   $filter_asset_type['type']['group'] = 1;
-  $filter_asset_type['type']['value'] = array();
+  $filter_asset_type['type']['value'] = array(
+    $asset_type->type => $asset_type->type,
+  );
 
   $filter_title = array();
   $filter_title['title']['id'] = 'title';
@@ -45,18 +51,17 @@ function asset_views_default_asset_browser() {
   $filter_title['title']['group'] = 1;
   $filter_title['title']['exposed'] = TRUE;
   $filter_title['title']['expose']['operator_id'] = 'name_op';
-  $filter_title['title']['expose']['label'] = 'Name';
+  $filter_title['title']['expose']['label'] = 'Filter by Name';
   $filter_title['title']['expose']['operator'] = 'name_op';
   $filter_title['title']['expose']['identifier'] = 'title';
 
-
-
+  // View
   $view = new view();
-  $view->name = 'asset_browser';
-  $view->description = 'A view used to list all asset types of "File".';
+  $view->name = 'asset_browser_' . $asset_type->type;
+  $view->description = 'A view used to list all '.$asset_type->title.' assets.';
   $view->tag = 'assets';
   $view->base_table = 'asset';
-  $view->human_name = 'Asset Browser';
+  $view->human_name = 'ASSET | ' . $asset_type->title . ' Browser';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
@@ -69,23 +74,28 @@ function asset_views_default_asset_browser() {
   $handler->display->display_options['access']['type'] = 'none';
   $handler->display->display_options['cache']['type'] = 'none';
   $handler->display->display_options['query']['type'] = 'views_query';
+
   $handler->display->display_options['exposed_form']['type'] = 'basic';
-  $handler->display->display_options['exposed_form']['options']['reset_button'] = TRUE;
+  $handler->display->display_options['exposed_form']['options']['reset_button'] = FALSE;
+  $handler->display->display_options['exposed_form']['options']['autosubmit'] = TRUE;
+
   $handler->display->display_options['pager']['type'] = 'full';
   $handler->display->display_options['pager']['options']['items_per_page'] = '24';
   $handler->display->display_options['pager']['options']['offset'] = '0';
   $handler->display->display_options['pager']['options']['id'] = '0';
   $handler->display->display_options['pager']['options']['quantity'] = '9';
+
   $handler->display->display_options['style_plugin'] = 'default';
   $handler->display->display_options['style_options']['row_class'] = 'asset-browser-items';
   $handler->display->display_options['row_plugin'] = 'fields';
+
   /* No results behavior: Global: Unfiltered text */
   $handler->display->display_options['empty']['area_text_custom']['id'] = 'area_text_custom';
   $handler->display->display_options['empty']['area_text_custom']['table'] = 'views';
   $handler->display->display_options['empty']['area_text_custom']['field'] = 'area_text_custom';
   $handler->display->display_options['empty']['area_text_custom']['label'] = 'No Results Found';
   $handler->display->display_options['empty']['area_text_custom']['empty'] = TRUE;
-  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box messages status">No Files found.</div>';
+  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box messages status">No '.$asset_type->plural.' found.</div>';
 
   $handler->display->display_options['fields'] = array();
   /* Field: Asset: Title */
@@ -101,119 +111,98 @@ function asset_views_default_asset_browser() {
 
   $handler->display->display_options['filters'] = array();
   /* Filter criterion: Asset: Type */
-  // $handler->display->display_options['filters'] += $filter_asset_type;
+  $handler->display->display_options['filters'] += $filter_asset_type;
   /* Filter criterion: Asset: Title */
   $handler->display->display_options['filters'] += $filter_title;
 
-  foreach(asset_get_types() as $bundle => $asset_type){
-    $has_field = array();
-    foreach(field_info_instances('asset', $asset_type->type) as $instance){
-      $field = field_info_field($instance['field_name']);
-      $has_field[$field['type']][] = array(
-        $field['field_name'],
-        $field,
-        $instance,
-      );
-    }
+  $has_field = array();
+  foreach(field_info_instances('asset', $asset_type->type) as $instance){
+    $field = field_info_field($instance['field_name']);
+    $has_field[$field['type']][] = array(
+      $field['field_name'],
+      $field,
+      $instance,
+    );
+  }
 
-    $handler = $view->new_display('embed', $asset_type->title, $asset_type->type);
-    $handler->display->display_options['defaults']['fields'] = FALSE;
+  if(isset($has_field['image'])){
+    /* Field: Asset: Image */
+    list($field_name, $field, $instance) = reset($has_field['image']);
+    $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+    $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+    $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+    $handler->display->display_options['fields'][$field_name]['label'] = '';
+    $handler->display->display_options['fields'][$field_name]['element_label_colon'] = FALSE;
+    $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'fid';
+    $handler->display->display_options['fields'][$field_name]['settings'] = array(
+      'image_style' => 'asset-thumb',
+      'image_link' => '',
+    );
+  }
 
-    $handler->display->display_options['fields'] = array();
-    /* Field: Asset: Title */
-    $handler->display->display_options['fields'] += $field_title;
+  elseif(isset($has_field['video_embed_field'])){
+    /* Field: Asset: Video Embed */
+    list($field_name, $field, $instance) = reset($has_field['video_embed_field']);
+    $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+    $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+    $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+    $handler->display->display_options['fields'][$field_name]['label'] = '';
+    $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'video_url';
+    $handler->display->display_options['fields'][$field_name]['type'] = 'video_embed_field_thumbnail';
+    $handler->display->display_options['fields'][$field_name]['settings'] = array(
+      'image_style' => 'asset-thumb',
+      'image_link' => '',
+    );
+  }
 
-    if(isset($has_field['image'])){
-      /* Field: Asset: Image */
-      list($field_name, $field, $instance) = reset($has_field['image']);
-      $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
-      $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
-      $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
-      $handler->display->display_options['fields'][$field_name]['label'] = '';
-      $handler->display->display_options['fields'][$field_name]['element_label_colon'] = FALSE;
-      $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'fid';
-      $handler->display->display_options['fields'][$field_name]['settings'] = array(
-        'image_style' => 'asset-thumb',
-        'image_link' => '',
-      );
-    }
+  elseif(isset($has_field['file'])){
+    /* Field: Asset: File */
+    list($field_name, $field, $instance) = reset($has_field['file']);
+    $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+    $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+    $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+    $handler->display->display_options['fields'][$field_name]['label'] = '';
+    $handler->display->display_options['fields'][$field_name]['element_label_colon'] = FALSE;
+    $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'fid';
+    $handler->display->display_options['fields']['job_file']['type'] = 'asset_file_icon';
+    $handler->display->display_options['fields']['job_file']['settings'] = array(
+      'show_title' => 0,
+      'show_download' => 0,
+    );
+  }
 
-    elseif(isset($has_field['video_embed_field'])){
-      /* Field: Asset: Video Embed */
-      list($field_name, $field, $instance) = reset($has_field['video_embed_field']);
-      $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
-      $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
-      $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
-      $handler->display->display_options['fields'][$field_name]['label'] = '';
-      $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'video_url';
-      $handler->display->display_options['fields'][$field_name]['type'] = 'video_embed_field_thumbnail';
-      $handler->display->display_options['fields'][$field_name]['settings'] = array(
-        'image_style' => 'asset-thumb',
-        'image_link' => '',
-      );
-    }
-
-    elseif(isset($has_field['file'])){
-      /* Field: Asset: File */
-      list($field_name, $field, $instance) = reset($has_field['file']);
-      $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
-      $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
-      $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
-      $handler->display->display_options['fields'][$field_name]['label'] = '';
-      $handler->display->display_options['fields'][$field_name]['element_label_colon'] = FALSE;
-      $handler->display->display_options['fields'][$field_name]['click_sort_column'] = 'fid';
-      $handler->display->display_options['fields']['job_file']['type'] = 'asset_file_icon';
-      $handler->display->display_options['fields']['job_file']['settings'] = array(
-        'show_title' => 0,
-        'show_download' => 0,
-      );
-    }
-
-    elseif(isset($has_field['entityreference'])){
-      /* Field: Children: Entity Reference */
-      foreach($has_field['entityreference'] as $reference){
-        $found = FALSE;
-        list($field_name, $field, $instance) = $reference;
-        if(isset($field['settings']['handler_settings']['target_bundles']) &&
-          count($field['settings']['handler_settings']['target_bundles']) == 1){
-          if($fields = asset_entityreference_contains($field, 'image')){
-            foreach($fields as $key => $data){
-              $found = TRUE;
-              $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
-              $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
-              $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
-              $handler->display->display_options['fields'][$field_name]['label'] = '';
-              $handler->display->display_options['fields'][$field_name]['type'] = 'asset_image';
-              $handler->display->display_options['fields'][$field_name]['settings'] = array(
-                'field_name' => $key,
-                'image_style' => 'asset-thumb',
-                'image_link' => '',
-              );
-              break;
-            }
+  elseif(isset($has_field['entityreference'])){
+    /* Field: Children: Entity Reference */
+    foreach($has_field['entityreference'] as $reference){
+      $found = FALSE;
+      list($field_name, $field, $instance) = $reference;
+      if(isset($field['settings']['handler_settings']['target_bundles']) &&
+        count($field['settings']['handler_settings']['target_bundles']) == 1){
+        if($fields = asset_entityreference_contains($field, 'image')){
+          foreach($fields as $key => $data){
+            $found = TRUE;
+            $handler->display->display_options['fields'][$field_name]['id'] = $field_name;
+            $handler->display->display_options['fields'][$field_name]['table'] = 'field_data_' . $field_name;
+            $handler->display->display_options['fields'][$field_name]['field'] = $field_name;
+            $handler->display->display_options['fields'][$field_name]['label'] = '';
+            $handler->display->display_options['fields'][$field_name]['type'] = 'asset_image';
+            $handler->display->display_options['fields'][$field_name]['settings'] = array(
+              'field_name' => $key,
+              'image_style' => 'asset-thumb',
+              'image_link' => '',
+            );
+            break;
           }
         }
-        if($found){
-          break;
-        }
+      }
+      if($found){
+        break;
       }
     }
-
-    /* Field: Asset: Asset Select */
-    $handler->display->display_options['fields'] += $field_asset_select;
-
-    $handler->display->display_options['defaults']['filter_groups'] = FALSE;
-    $handler->display->display_options['defaults']['filters'] = FALSE;
-
-    $handler->display->display_options['filters'] = array();
-    /* Filter criterion: Asset: Type */
-    $handler->display->display_options['filters'] += $filter_asset_type;
-    $handler->display->display_options['filters']['type']['value'] = array(
-      $asset_type->type => $asset_type->type,
-    );
-    /* Filter criterion: Asset: Title */
-    $handler->display->display_options['filters'] += $filter_title;
   }
+
+  /* Field: Asset: Asset Select */
+  $handler->display->display_options['fields'] += $field_asset_select;
 
   return $view;
 }
@@ -231,7 +220,7 @@ function asset_views_default_asset_library() {
   $view->description = 'A list of all assets';
   $view->tag = 'assets';
   $view->base_table = 'asset';
-  $view->human_name = 'Asset Library';
+  $view->human_name = 'ASSET | Library';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
