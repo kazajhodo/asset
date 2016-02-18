@@ -456,9 +456,10 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
  * Inline entity form "add existing" alter
  */
 function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
+
   $ief_id = $form['#ief_id'];
   $instance = $form_state['inline_entity_form'][$ief_id]['instance'];
-  $settings = $form_state['inline_entity_form'][$ief_id]['form settings'];
+  $settings = $form_state['inline_entity_form'][$ief_id]['settings'];
 
   $entity_type = $instance['entity_type'];
   $field_name = $instance['field_name'];
@@ -468,14 +469,23 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
   // Only act on assets.
   if($field['settings']['target_type'] !== 'asset') return;
 
-  $form['#prefix'] = '<div class="asset-inline-entity-browser">';
+  $bundle_count = count($settings['bundles']);
+  $attributes = array();
+  $attributes['class'][] = 'asset-inline-entity-browser';
+  if($bundle_count > 1){
+    $attributes['class'][] = 'multiple';
+  }
+  $form['#prefix'] = '<div'.drupal_attributes($attributes).'>';
   $form['#suffix'] = '</div>';
 
-  // @TODO allow for more than one bundle
-  $asset_type_name = $settings['bundle'];
-  $asset_type = asset_type_load($asset_type_name);
-
-  $form['browser'] = asset_type_browser($asset_type);
+  // Support for multiple bundles.
+  foreach($settings['bundles'] as $asset_type_name){
+    $asset_type = asset_type_load($asset_type_name);
+    if($bundle_count > 1){
+      $form[$asset_type_name]['title']['#markup'] = '<div class="asset-inline-entity-title">'.t('Existing %type', array('%type' => $asset_type->plural)).'</div>';
+    }
+    $form[$asset_type_name]['browser'] = asset_type_browser($asset_type);
+  }
 
   $form['entity_id']['#attributes'] = array('class'=>array('asset-inline-entity'));
   $form['entity_id']['#prefix'] = '<div class="element-hidden">';
@@ -485,6 +495,38 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
   $form['actions']['ief_reference_save']['#attributes']['class'][] = 'small';
   $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'text';
   $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'small';
+
+
+  // $ief_id = $form['#ief_id'];
+  // $instance = $form_state['inline_entity_form'][$ief_id]['instance'];
+  // $settings = $form_state['inline_entity_form'][$ief_id]['form settings'];
+  // dsm($form_state['inline_entity_form'][$ief_id]);
+
+  // $entity_type = $instance['entity_type'];
+  // $field_name = $instance['field_name'];
+  // $bundle = $instance['bundle'];
+  // $field = field_info_field($field_name);
+
+  // // Only act on assets.
+  // if($field['settings']['target_type'] !== 'asset') return;
+
+  // $form['#prefix'] = '<div class="asset-inline-entity-browser">';
+  // $form['#suffix'] = '</div>';
+
+  // // @TODO allow for more than one bundle
+  // $asset_type_name = $settings['bundle'];
+  // $asset_type = asset_type_load($asset_type_name);
+
+  // $form['browser'] = asset_type_browser($asset_type);
+
+  // $form['entity_id']['#attributes'] = array('class'=>array('asset-inline-entity'));
+  // $form['entity_id']['#prefix'] = '<div class="element-hidden">';
+  // $form['entity_id']['#suffix'] = '</div>';
+
+  // $form['actions']['ief_reference_save']['#attributes']['class'][] = 'primary';
+  // $form['actions']['ief_reference_save']['#attributes']['class'][] = 'small';
+  // $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'text';
+  // $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'small';
 }
 
 /**

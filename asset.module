@@ -840,19 +840,22 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
   $output['#attached']['js']['browser'] = drupal_get_path('module','asset') . '/js/asset.browser.js';
   $output['#attached']['js'][] = drupal_get_path('module','views') . '/js/ajax_view.js';
 
+  $view_name = 'asset_browser_' . $asset_type->type;
+  $display_id = 'default';
   $args = array();
-  if($view = views_get_view('asset_browser')){
+  if($view = views_get_view($view_name)){
     $args[] = $js_load_assets; // Load js assets
     $args[] = $view_mode; // View Mode
     $args[] = true; // Asset Preview
     $view->set_arguments($args);
-    $view->set_display($asset_type->type);
+    $view->set_display($display_id);
+    // $view->set_display($asset_type->type);
     // $view->set_items_per_page($results_per_page);
     $view->execute();
-    $count = count( $view->result );
+    $count = count($view->result);
     // $view->asset_view_mode = $view_mode;
     // $view->asset_preview = true;
-    $output['view']['#markup'] = $view->preview($asset_type->type, $args);
+    $output['view']['#markup'] = $view->preview($display_id, $args);
     $view->destroy();
   }
   else{
@@ -1450,14 +1453,35 @@ function asset_field_contains($field, $instance, $type){
 /**
  * Determine if entityreference child contains a field of a certain type.
  */
-function asset_entityreference_contains($field, $type, $parents = array()){
+function asset_entityreference_contains($field, $type){
   $fields = array();
   if ($field['type'] == 'entityreference' &&
     isset($field['settings']['handler_settings']['target_bundles']) &&
-    count($field['settings']['handler_settings']['target_bundles']) == 1){
+    isset($field['settings']['target_type'])){
 
     $entity_type = $field['settings']['target_type'];
-    $bundle = key($field['settings']['handler_settings']['target_bundles']);
+    foreach($field['settings']['handler_settings']['target_bundles'] as $bundle){
+      $parents[] = $field['field_name'];
+
+      foreach (field_info_instances($entity_type, $bundle) as $field_name => $instance) {
+        $fields += asset_entityreference_bundle_contains($field, $type, $bundle);
+      }
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Determine if entityreference child contains a field of a certain type within
+ * a certain bundle.
+ */
+function asset_entityreference_bundle_contains($field, $type, $bundle, $parents = array()){
+  $fields = array();
+  if ($field['type'] == 'entityreference' &&
+    isset($field['settings']['handler_settings']['target_bundles']) &&
+    isset($field['settings']['target_type'])){
+
+    $entity_type = $field['settings']['target_type'];
     $parents[] = $field['field_name'];
 
     foreach (field_info_instances($entity_type, $bundle) as $field_name => $instance) {
@@ -1471,7 +1495,7 @@ function asset_entityreference_contains($field, $type, $parents = array()){
         );
       }
       else{
-        $fields += asset_entityreference_contains($field, $type, $parents);
+        $fields += asset_entityreference_contains($field, $type, $bundle, $parents);
       }
     }
   }
@@ -1489,6 +1513,11 @@ function asset_entityreference_get($entity_type, $entity, $target){
   }
   else{
     $wrappers[] = $wrapper;
+  }
+  foreach($wrappers as $delta => $wrapper){
+    if(!isset($wrapper->{$target['field_name']})){
+      unset($wrappers[$delta]);
+    }
   }
   return $wrappers;
 }

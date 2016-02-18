@@ -34,6 +34,7 @@ function asset_field_formatter_info() {
       'field types' => array('entityreference'),
       'settings' => array(
         'field_name' => '',
+        'field_video_name' => '',
         'image_style' => '',
         'image_link' => '',
         'as_url' => false,

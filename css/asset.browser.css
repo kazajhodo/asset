@@ -146,3 +146,15 @@
 .asset-inline-entity-browser fieldset.ief-form .asset-browser .asset-browser-items{
   border:1px solid #545454;
 }
+
+.asset-inline-entity-browser.multiple .asset-browser{
+  background: #272727;
+  padding:10px;
+  margin:10px 0;
+}
+
+.asset-inline-entity-browser .asset-inline-entity-title{
+  color:#fff;
+  font-size: 20px;
+  text-transform: uppercase;
+}
