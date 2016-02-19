@@ -44,7 +44,7 @@ function asset_field_formatter_info() {
     'asset_gallery' => array(
       'label' => t('ASSET | Gallery'),
       'field types' => array('entityreference'),
-      'settings' => array('field_name' => '', 'image_style' => '', 'image_thumb_style' => ''),
+      'settings' => array('field_name' => '', 'field_video_name' => '', 'image_style' => '', 'image_thumb_style' => '', 'video_style' => ''),
     ),
     'asset_file' => array(
       'label' => t('ASSET | File'),
