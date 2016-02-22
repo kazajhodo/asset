@@ -1,102 +1,96 @@
 <?php
 
-class assetWidgetLink extends assetWidget {
-
-  public function instanceForm() {
-    $form = array();
-    $settings = $this->getFormSettings();
-    $values = $this->getValues();
-
-    $form['link'] = array(
-      '#id' => 'instance-asset-link',
-      '#type' => 'textfield',
-      '#title' => t('Link URL'),
-      '#size' => 60,
-      '#maxlength' => 128,
-      '#weight' => 2,
-      '#default_value' => !empty($values['link']) ? $values['link'] : '',
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function _asset_widget_asset_link_settings_form($field, $instance, $view_mode, $form, &$form_state){
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $element = array();
+  $element['icon'] = array(
+    '#type' => 'fawesome_select',
+    '#title' => t('Icon'),
+    '#default_value' => $settings['icon'],
+  );
+  $element['label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label'),
+    '#description' => t('If empty, the referenced entity title will be used.'),
+    '#default_value' => $settings['label'],
+  );
+  if($fields = asset_entityreference_contains($field, 'file')){
+    $field_names = array('- None -');
+    foreach($fields as $key => $target){
+      $target['parents'][] = $target['field_name'];
+      $field_names[$key] = $target['instance']['label'] . ' [' . implode($target['parents'], ' > ') . ']';
+    }
+    $element['field_name'] = array(
+      '#type' => 'select',
+      '#title' => t('Link to'),
+      '#title' => t('If empty, will link to entity url.'),
+      '#default_value' => $settings['field_name'],
+      '#required' => TRUE,
+      '#options' => $field_names,
     );
+  }
+  return $element;
+}
 
-    if(module_exists('linkit')){
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function _asset_widget_asset_link_settings_summary($field, $instance, $view_mode){
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $summary = array();
+  $summary[] = t('Icon: !icon', array('!icon' => ($settings['icon'] ? '<i class="fa fa-' . $settings['icon'] . '"></i>' : '<em>- None -</em>')));
+  $summary[] = t('Label: @label', array('@label' => ($settings['label'] ? $settings['label'] : 'Entity title')));
+  $label = 'Entity';
+  if(($settings['field_name'] && $fields = asset_entityreference_contains($field, 'file')) && isset($fields[$settings['field_name']])){
+    $target = $fields[$settings['field_name']];
+    $target['parents'][] = $target['field_name'];
+    $label = implode($target['parents'], ' > ');
+  }
+  $summary[] = t('Link to: @field', array('@field' => $label));
+  return implode('<br>', $summary);
+}
 
-      $plugins = linkit_profile_field_load_all();
-      if(!empty($plugins)){
-        // Load the profile.
-        $profile = array_pop($plugins);
-        // Load the insert plugin for the profile.
-        $insert_plugin = linkit_insert_plugin_load($profile->data['insert_plugin']['plugin']);
-
-        $element = &$form['link'];
-
-        // Set the field ID.
-        $field_id = $element['#id'];
-
-        $field_js = array(
-          'data' => array(
-            'linkit' => array(
-              'fields' => array(
-                $field_id => array(
-                  'profile' => $profile->name,
-                  'insert_plugin' => $profile->data['insert_plugin']['plugin'],
-                  'url_method' => $profile->data['insert_plugin']['url_method'],
-                  // @TODO: Add autocomplete settings.
-                ),
-              ),
-            ),
-          ),
-          'type' => 'setting',
-        );
-
-        // Link fields can have a title field.
-        if ($element['#type'] == 'link_field') {
-          if (isset($instance['settings']['title']) && in_array($instance['settings']['title'], array('optional', 'required'))) {
-            $field_js['data']['linkit']['fields'][$field_id]['title_field'] = $element['#id'] . '-title';
-          }
-        }
-
-        // Attach js files and settings Linkit needs.
-        $element['#attached']['library'][] = array('linkit', 'base');
-        $element['#attached']['library'][] = array('linkit', 'field');
-        $element['#attached']['js'][] = $insert_plugin['javascript'];
-        $element['#attached']['js'][] = $field_js;
-
-        $button_text = !empty($instance['settings']['linkit']['button_text']) ? $instance['settings']['linkit']['button_text'] : t('Search Local Content');
-        $element['#field_suffix'] = '<a class="button tiny expand secondary linkit-field-button linkit-field-' . $field_id . '" href="#"><i class="fa fa-search"></i> '.$button_text.'</a>';
+/**
+ * Implements hook_field_formatter_view().
+ */
+function _asset_widget_asset_link_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
+  $element = array();
+  $settings = $display['settings'];
+  if(($settings['field_name'] && $fields = asset_entityreference_contains($field, 'file')) && isset($fields[$settings['field_name']])){
+    $target = $fields[$settings['field_name']];
+    $target_field = $target['field'];
+    $target_instance = $target['instance'];
+    $target_entity_wrappers = asset_entityreference_get($entity_type, $entity, $target);
+  }
+  foreach ($items as $delta => $item) {
+    $markup = '';
+    if($settings['icon']){
+      $markup .= '<i class="fa fa-'.$settings['icon'].'"></i> ';
+    }
+    $label = $settings['label'];
+    if(!$label){
+      $wrapper = entity_metadata_wrapper($entity_type, $entity);
+      $label = $wrapper->{$field['field_name']}->label();
+    }
+    if(isset($target_entity_wrappers[$delta])){
+      $url = array('path'=>'','options'=>array());
+      $target_entity_wrapper = $target_entity_wrappers[$delta];
+      if($target_file = $target_entity_wrapper->{$target['field_name']}->value()){
+        $url['path'] = file_create_url($target_file['uri']);
       }
     }
-
-    $form['new'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Open link in a new window'),
-      '#id' => 'exo-link-new',
-      '#weight' => 3,
-      '#default_value' => !empty($values['new']) ? $values['new'] : '',
-      '#states' => array(
-        'visible' => array(
-          ':input[name="data[link]"]' => array('filled' => TRUE),
-        ),
-      ),
-    );
-    return $form;
-  }
-
-  public function instanceRender(&$vars) {
-    $values = $this->getValues();
-    if(!empty($values['link'])){
-      $attributes = array();
-      $attributes['href'] = url($values['link']);
-      if(!empty($values['new'])){
-        $attributes['target'] = '_blank';
-      }
-      $vars['content']['link_prefix'] = array(
-        '#markup' => '<a '.drupal_attributes($attributes).'>',
-        '#weight' => -100
-      );
-      $vars['content']['link_suffix'] = array(
-        '#markup' => '</a>',
-        '#weight' => 100
-      );
+    else{
+      $url = entity_uri($entity_type, $entity);
     }
+    $markup .= l($label, $url['path'], $url['options']);
+    $element[$delta] = array(
+      '#markup' => $markup,
+    );
   }
-
+  return $element;
 }
