@@ -375,6 +375,12 @@ function file_create_label($ext){
     case 'pdf':
       $label = 'PDF';
       break;
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+      $label = 'Image';
+      break;
   }
   return $label;
 }
