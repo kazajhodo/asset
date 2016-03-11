@@ -56,7 +56,7 @@ class AssetController extends EntityAPIController {
         $pattern = trim($pattern);
         $entity->title = token_replace($pattern, array('asset' => $entity, 'user' => $user), array('sanitize' => false, 'clear' => TRUE));
         $entity->title = str_replace('&times;', 'x', $entity->title);
-        $entity->title = trim(preg_replace('/ +/', ' ', preg_replace('/[^A-Za-z0-9 !@#$%^&*().]/', ' ', urldecode(html_entity_decode(strip_tags($entity->title))))));;
+        $entity->title = trim(preg_replace('/ +/', ' ', preg_replace('/[^A-Za-z0-9 !@#$%^&*().,]/', ' ', urldecode(html_entity_decode(strip_tags($entity->title))))));
       }
       if (empty($entity->title)){
         $entity->title = t('System') . ' [' . $asset_type->title . ']';

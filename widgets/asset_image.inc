@@ -59,6 +59,22 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
       '#default_value' => $settings['as_url'],
       '#id' => $elid,
     );
+    $element['as_bg'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Set image as a background within an element'),
+      '#default_value' => $settings['as_bg'],
+      '#id' => $elid . '-bg',
+    );
+    $element['as_bg_class'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Classes to add to background element'),
+      '#default_value' => $settings['as_bg_class'],
+      '#states' => array(
+        'visible' => array(
+          '#' . $elid . '-bg' => array('checked' => TRUE),
+        ),
+      ),
+    );
     $element['limit'] = array(
       '#type' => 'textfield',
       '#title' => t('Limit the number of items to display'),
@@ -71,6 +87,23 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
       '#default_value' => $settings['random'],
       '#id' => $elid . '-random',
     );
+
+    if(module_exists('colorbox')){
+      $element['image_link']['#states']['visible']['#' . $elid . '-colorbox'] = array('checked' => FALSE);
+      $element['image_style']['#states']['visible']['#' . $elid . '-colorbox'] = array('checked' => FALSE);
+      $element['as_url']['#states']['visible']['#' . $elid . '-colorbox'] = array('checked' => FALSE);
+      $element['colorbox'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Use Colorbox'),
+        '#default_value' => $settings['colorbox'],
+        '#id' => $elid . '-colorbox',
+      );
+      $colorbox_elements = colorbox_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
+      foreach($colorbox_elements as &$el){
+        $el['#states']['visible']['#' . $elid . '-colorbox'] = array('checked' => TRUE);
+      }
+      $element += $colorbox_elements;
+    }
   }
   return $element;
 }
@@ -96,24 +129,32 @@ function _asset_widget_asset_image_settings_summary($field, $instance, $view_mod
     $label = implode($target['parents'], ' > ');
     $summary .= '<br>' . t('Target video field: @field', array('@field' => $label));
   }
-  $summary .= '<br>' . image_field_formatter_settings_summary($field, $instance, $view_mode);
-  if($settings['as_url']){
-    $summary .= '<br>' . t('As URL: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
+  if(module_exists('colorbox') && $settings['colorbox']){
+    $summary .= '<br>' . t('As Colorbox: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
+    $summary .= '<br>' . colorbox_field_formatter_settings_summary($field, $instance, $view_mode);
+  }else{
+    $summary .= '<br>' . image_field_formatter_settings_summary($field, $instance, $view_mode);
+    if($settings['as_url']){
+      $summary .= '<br>' . t('As URL: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
+    }
+    if($settings['image_link'] && !in_array($settings['image_link'], array('content','file'))){
+      $fields = asset_field_contains($field, $instance, 'link_field');
+      if(isset($fields[$settings['image_link']])){
+        $target = $fields[$settings['image_link']];
+        $target['parents'][] = $target['field_name'];
+        $label = implode($target['parents'], ' > ');
+        $summary .= '<br>' . t('Linked to: @field', array('@field' => $label));
+      }
+    }
+  }
+  if($settings['as_bg']){
+    $summary .= '<br>' . t('As Background: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
   }
   if($settings['limit']){
     $summary .= '<br>' . t('Limit to: !limit', array('!limit' => format_plural($settings['limit'], '1 item', '@count items')));
   }
   if($settings['random']){
     $summary .= '<br>' . t('Random: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
-  }
-  if($settings['image_link'] && !in_array($settings['image_link'], array('content','file'))){
-    $fields = asset_field_contains($field, $instance, 'link_field');
-    if(isset($fields[$settings['image_link']])){
-      $target = $fields[$settings['image_link']];
-      $target['parents'][] = $target['field_name'];
-      $label = implode($target['parents'], ' > ');
-      $summary .= '<br>' . t('Linked to: @field', array('@field' => $label));
-    }
   }
   return $summary;
 }
@@ -124,6 +165,7 @@ function _asset_widget_asset_image_settings_summary($field, $instance, $view_mod
 function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
   $settings = $display['settings'];
   $element = array();
+  $use_colorbox = !empty($settings['colorbox']) && module_exists('colorbox');
   $target_image_entity_wrappers = array();
   $target_video_entity_wrappers = array();
 
@@ -156,7 +198,7 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
     }
 
     // Nested link field support
-    if (!in_array($settings['image_link'], array('content','file'))) {
+    if (!$use_colorbox && !in_array($settings['image_link'], array('content','file'))) {
       $link_fields = asset_field_contains($field, $instance, 'link_field');
       if(isset($link_fields[$settings['image_link']])){
         $link_target = $link_fields[$settings['image_link']];
@@ -178,7 +220,21 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
         $target_items = field_get_items($target_entity_type, $target_entity, $image_target['field_name']);
         if($target_items){
           module_load_include('inc', 'image', 'image.field');
-          $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+
+          if($use_colorbox){
+            $element[$delta] = colorbox_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+          }
+          else{
+            $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+          }
+
+          if($settings['as_bg']){
+            foreach($element[$delta] as &$el){
+              $el['#original_theme'] = $el['#theme'];
+              $el['#theme'] = 'asset_image_bg';
+              $el['#attributes']['class'][] = $settings['as_bg_class'];
+            }
+          }
         }
       }
 
@@ -199,36 +255,38 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
         }
       }
 
-      if($settings['as_url']){
-        foreach($element[$delta] as &$e){
-          $element[$delta] = array(
-            '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
-          );
-        }
-      }
-      if ($settings['image_link'] == 'content') {
-        foreach($element[$delta] as &$e){
-          if(isset($e['#path']['path'])){
-            $e['#path'] = entity_uri($entity_type, $entity);
+      if(!$use_colorbox){
+        if($settings['as_url']){
+          foreach($element[$delta] as &$e){
+            $element[$delta] = array(
+              '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
+            );
           }
         }
-      }
-      if ($settings['image_link'] == 'file') {
-        foreach($element[$delta] as &$e){
-          $e['#path']['path'] = file_create_url($e['#item']['uri']);
+        if ($settings['image_link'] == 'content') {
+          foreach($element[$delta] as &$e){
+            if(isset($e['#path']['path'])){
+              $e['#path'] = entity_uri($entity_type, $entity);
+            }
+          }
         }
-      }
-      // Nested link render
-      elseif (isset($target_link_entity_wrapper)) {
-        if(isset($target_link_entity_wrapper[$delta])){
-          $link_target_entity_wrapper = $target_link_entity_wrapper[$delta];
-          $link_target_entity_type = $link_target_entity_wrapper->type();
-          $link_target_entity = $link_target_entity_wrapper->value();
-          $link_target_items = field_get_items($link_target_entity_type, $link_target_entity, $link_target['field_name']);
-          if(isset($link_target_items[0]['url'])){
-            foreach($element[$delta] as $i => &$e){
-              $e['#path']['path'] = url($link_target_items[$i]['url']);
-              $e['#path']['options'] = $link_target_items[$i]['attributes'];
+        if ($settings['image_link'] == 'file') {
+          foreach($element[$delta] as &$e){
+            $e['#path']['path'] = file_create_url($e['#item']['uri']);
+          }
+        }
+        // Nested link render
+        elseif (isset($target_link_entity_wrapper)) {
+          if(isset($target_link_entity_wrapper[$delta])){
+            $link_target_entity_wrapper = $target_link_entity_wrapper[$delta];
+            $link_target_entity_type = $link_target_entity_wrapper->type();
+            $link_target_entity = $link_target_entity_wrapper->value();
+            $link_target_items = field_get_items($link_target_entity_type, $link_target_entity, $link_target['field_name']);
+            if(isset($link_target_items[0]['url'])){
+              foreach($element[$delta] as $i => &$e){
+                $e['#path']['path'] = url($link_target_items[$i]['url']);
+                $e['#path']['options'] = $link_target_items[$i]['attributes'];
+              }
             }
           }
         }

@@ -88,8 +88,8 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     if(count($field['settings']['handler_settings']['target_bundles']) == 1){
       $asset_type = asset_type_load(reset($field['settings']['handler_settings']['target_bundles']));
       $form['override_labels']['#default_value'] = true;
-      $form['label_singular']['#default_value'] = strtolower($asset_type->title);
-      $form['label_plural']['#default_value'] = strtolower($asset_type->plural);
+      $form['label_singular']['#default_value'] = !empty($this->settings['label_singular']) ? $this->settings['label_singular'] : strtolower($asset_type->title);
+      $form['label_plural']['#default_value'] = !empty($this->settings['label_plural']) ? $this->settings['label_plural'] : strtolower($asset_type->plural);
     }
 
     if(module_exists('manualcrop') && $targets = asset_entityreference_contains($field, 'image')){

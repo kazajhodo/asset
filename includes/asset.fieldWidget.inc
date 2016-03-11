@@ -11,8 +11,7 @@ function asset_field_formatter_info() {
   $default_tags = array(
     'a', 'b', 'br', 'em', 'i', 'p', 'strong', 'u', 'ul',
   );
-
-  return array(
+  $info = array(
     'asset_text' => array(
       'label' => t('ASSET | Text'),
       'field types' => array('text', 'text_long', 'text_with_summary'),
@@ -37,6 +36,8 @@ function asset_field_formatter_info() {
         'field_video_name' => '',
         'image_style' => '',
         'image_link' => '',
+        'as_bg' => false,
+        'as_bg_class' => '',
         'as_url' => false,
         'limit' => '',
         'random' => false),
@@ -70,6 +71,12 @@ function asset_field_formatter_info() {
       'settings' => array('icon' => 'file', 'label' => 'Download', 'field_name' => ''),
     ),
   );
+  if(module_exists('colorbox')){
+    $settings = colorbox_field_formatter_info();
+    $info['asset_image']['settings']['colorbox'] = false;
+    $info['asset_image']['settings'] += $settings['colorbox']['settings'];
+  }
+  return $info;
 }
 
 /**

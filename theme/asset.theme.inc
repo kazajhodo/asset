@@ -384,3 +384,28 @@ function file_create_label($ext){
   }
   return $label;
 }
+
+
+
+/**
+ * Returns HTML for an Colorbox image field formatter.
+ *
+ * @param $vars
+ *   An associative array containing:
+ *   - item: An array of image data.
+ *   - image_style: An optional image style.
+ *   - path: An array containing the link 'path' and link 'options'.
+ *
+ * @ingroup themeable
+ */
+function theme_asset_image_bg($vars) {
+  $image = theme($vars['original_theme'], $vars);
+
+  // Replace <img> with <div>.
+  $vars['attributes']['class'][] = 'asset-image-bg';
+  $regex = '#<img.*src="([^"]*)"([^>]*)>#';
+  $replace = '<div'.drupal_attributes($vars['attributes']).' style="background-image: url($1);"></div>';
+  $image = preg_replace($regex, $replace, $image);
+
+  return $image;
+}

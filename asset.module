@@ -284,6 +284,21 @@ function asset_theme() {
       'file' => 'asset.theme.inc',
       'path' => drupal_get_path('module', 'asset') . '/theme',
     ),
+    'asset_image_bg' => array(
+      'variables' => array(
+        'item' => NULL,
+        'entity_type' => NULL,
+        'entity' => NULL,
+        'node' => NULL,  // Left for legacy support.
+        'field' => array(),
+        'display_settings' => array(),
+        'delta' => NULL,
+        'original_theme' => NULL,
+        'attributes' => array(),
+      ),
+      'file' => 'asset.theme.inc',
+      'path' => drupal_get_path('module', 'asset') . '/theme',
+    ),
   );
   $instances = field_info_instances('asset');
   foreach($instances as $asset_type_name => $fields){
