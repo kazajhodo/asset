@@ -1518,11 +1518,11 @@ function asset_entityreference_bundle_contains($field, $type, $bundle, $parents 
 /**
  * Get entityreference entity from results of asset_entityreference_contains().
  */
-function asset_entityreference_get($entity_type, $entity, $target){
+function asset_entityreference_get($entity_type, $entity, $target, $delta = 0){
   $wrapper = entity_metadata_wrapper($entity_type, $entity);
   $wrappers = array();
   if(!empty($target['parents'])){
-    $wrappers = asset_entityreference_get_wrapper($target['parents'], $wrapper);
+    $wrappers = asset_entityreference_get_wrapper($target['parents'], $wrapper, $delta);
   }
   else{
     $wrappers[] = $wrapper;
@@ -1538,20 +1538,23 @@ function asset_entityreference_get($entity_type, $entity, $target){
 /**
  * Get the entity wrappers based on their parent trees.
  */
-function asset_entityreference_get_wrapper($parents, $wrapper){
+function asset_entityreference_get_wrapper($parents, $wrapper, $delta = 0){
   $wrappers = array();
   $parent = array_shift($parents);
   $exists = isset($wrapper->{$parent});
   if(!$exists){
     watchdog('asset', 'Something is wrong with your entity reference field. There are more than 1 asset types being assigned to the field.');
   }
-  if($exists && $entities = $wrapper->{$parent}->value()){
+  $multiple = !is_null($delta) && is_array($wrapper->{$parent}->raw());
+  if($exists && $entities = ($multiple ? $wrapper->{$parent}[$delta]->value(): $wrapper->{$parent}->value())){
     $entities = is_array($entities) ? $entities : array($entities);
     $instance = field_info_field($parent);
-    foreach($entities as $entity){
+    foreach($entities as $child_delta => $entity){
       $wrapper = entity_metadata_wrapper($instance['settings']['target_type'], $entity);
       if(!empty($parents)){
-        $wrappers = array_merge($wrappers, asset_entityreference_get_wrapper($parents, $wrapper));
+        // We pass NULL here so that we get ALL children. This may cause
+        // issue in other scenarios. Not sure at this time.
+        $wrappers = array_merge($wrappers, asset_entityreference_get_wrapper($parents, $wrapper, NULL));
       }
       else{
         $wrappers[] = $wrapper;

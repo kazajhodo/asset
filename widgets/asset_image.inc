@@ -102,6 +102,7 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
       foreach($colorbox_elements as &$el){
         $el['#states']['visible']['#' . $elid . '-colorbox'] = array('checked' => TRUE);
       }
+      $colorbox_elements['colorbox_gallery']['#options']['asset-delta'] = t('Base Asset Delta');
       $element += $colorbox_elements;
     }
   }
@@ -130,6 +131,11 @@ function _asset_widget_asset_image_settings_summary($field, $instance, $view_mod
     $summary .= '<br>' . t('Target video field: @field', array('@field' => $label));
   }
   if(module_exists('colorbox') && $settings['colorbox']){
+    $colorbox_settings = &$instance['display'][$view_mode];
+    if(substr($colorbox_settings['settings']['colorbox_gallery'],0,5) == 'asset'){
+      $colorbox_settings['settings']['colorbox_gallery'] = 'custom';
+      $colorbox_settings['settings']['colorbox_gallery_custom'] = t('Base Asset Delta');
+    }
     $summary .= '<br>' . t('As Colorbox: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
     $summary .= '<br>' . colorbox_field_formatter_settings_summary($field, $instance, $view_mode);
   }else{
@@ -166,53 +172,29 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
   $settings = $display['settings'];
   $element = array();
   $use_colorbox = !empty($settings['colorbox']) && module_exists('colorbox');
-  $target_image_entity_wrappers = array();
-  $target_video_entity_wrappers = array();
 
-  if(($settings['field_name'] && $image_fields = asset_entityreference_contains($field, 'image')) && isset($image_fields[$settings['field_name']])){
-    $image_target = $image_fields[$settings['field_name']];
-    $target_image_entity_wrappers = asset_entityreference_get($entity_type, $entity, $image_target);
+  // Nested link field support
+  if (!$use_colorbox && !in_array($settings['image_link'], array('content','file'))) {
+    $link_fields = asset_field_contains($field, $instance, 'link_field');
+    if(isset($link_fields[$settings['image_link']])){
+      $link_target = $link_fields[$settings['image_link']];
+      $target_link_entity_wrapper = asset_entityreference_get($entity_type, $entity, $link_target);
+    }
   }
 
-  if(($settings['field_video_name'] && $video_fields = asset_entityreference_contains($field, 'video_embed_field')) && isset($video_fields[$settings['field_video_name']])){
-    $video_target = $video_fields[$settings['field_video_name']];
-    $target_video_entity_wrappers = asset_entityreference_get($entity_type, $entity, $video_target);
-  }
+  foreach($items as $delta => $item){
 
-  if(!empty($target_image_entity_wrappers) || !empty($target_video_entity_wrappers)){
-
-    // Randomize
-    if($settings['random']){
-      $keys = array_keys($items);
-      shuffle($keys);
-      $random = array();
-      foreach ($keys as $key){
-        $random[$key] = $items[$key];
-      }
-      $items = $random;
+    if($use_colorbox){
+      $once = FALSE;
     }
 
-    // Limit
-    if($settings['limit']){
-      $items = array_slice($items, 0, $settings['limit'], true);
-    }
-
-    // Nested link field support
-    if (!$use_colorbox && !in_array($settings['image_link'], array('content','file'))) {
-      $link_fields = asset_field_contains($field, $instance, 'link_field');
-      if(isset($link_fields[$settings['image_link']])){
-        $link_target = $link_fields[$settings['image_link']];
-        $target_link_entity_wrapper = asset_entityreference_get($entity_type, $entity, $link_target);
-      }
-    }
-
-    foreach ($items as $delta => $item) {
-
-      // Images
-      if(isset($target_image_entity_wrappers[$delta])){
+    if(($settings['field_name'] && $image_fields = asset_entityreference_contains($field, 'image')) && isset($image_fields[$settings['field_name']])){
+      $image_target = $image_fields[$settings['field_name']];
+      $target_image_entity_wrappers = asset_entityreference_get($entity_type, $entity, $image_target, $delta);
+      foreach($target_image_entity_wrappers as $child_delta => $wrapper){
         $target_field = $image_target['field'];
         $target_instance = $image_target['instance'];
-        $target_entity_wrapper = $target_image_entity_wrappers[$delta];
+        $target_entity_wrapper = $target_image_entity_wrappers[$child_delta];
         $target_entity_type = $target_entity_wrapper->type();
         $target_entity = $target_entity_wrapper->value();
         if(!$target_entity) continue;
@@ -222,10 +204,21 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
           module_load_include('inc', 'image', 'image.field');
 
           if($use_colorbox){
-            $element[$delta] = colorbox_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+            $display_colorbox = $display;
+            if(substr($display_colorbox['settings']['colorbox_gallery'],0,5) == 'asset'){
+              $display_colorbox['settings']['colorbox_gallery'] = 'custom';
+              $display_colorbox['settings']['colorbox_gallery_custom'] = 'asset-' . $delta;
+            }
+            if(!$once){
+              $once = TRUE;
+            }
+            else{
+              $display_colorbox['settings']['colorbox_node_style_first'] = $display_colorbox['settings']['colorbox_node_style'];
+            }
+            $element[$delta][$child_delta] = colorbox_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display_colorbox);
           }
           else{
-            $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+            $element[$delta][$child_delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
           }
 
           if($settings['as_bg']){
@@ -236,13 +229,21 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
             }
           }
         }
-      }
 
-      // Videos
-      if(isset($target_video_entity_wrappers[$delta])){
+        // if($target_items){
+        //   module_load_include('inc', 'image', 'image.field');
+        //   $element[$delta][$child_delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+        // }
+      }
+    }
+
+    if(($settings['field_video_name'] && $video_fields = asset_entityreference_contains($field, 'video_embed_field')) && isset($video_fields[$settings['field_video_name']])){
+      $video_target = $video_fields[$settings['field_video_name']];
+      $target_video_entity_wrappers = asset_entityreference_get($entity_type, $entity, $video_target);
+      foreach($target_image_entity_wrappers as $child_delta => $wrapper){
         $target_field = $video_target['field'];
         $target_instance = $video_target['instance'];
-        $target_entity_wrapper = $target_video_entity_wrappers[$delta];
+        $target_entity_wrapper = $target_video_entity_wrappers[$child_delta];
         $target_entity_type = $target_entity_wrapper->type();
         $target_entity = $target_entity_wrapper->value();
         if(!$target_entity) continue;
@@ -250,53 +251,210 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
         $target_items = field_get_items($target_entity_type, $target_entity, $video_target['field_name']);
         if($target_items){
           module_load_include('inc', 'video_embed_field', 'video_embed_field.field');
-          $element[$delta] = video_embed_field_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, array('type' => 'video_embed_field_thumbnail') + $display);
-
+          $element[$delta][$child_delta] = video_embed_field_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, array('type' => 'video_embed_field_thumbnail') + $display);
         }
       }
+    }
+  }
 
-      if(!$use_colorbox){
-        if($settings['as_url']){
-          foreach($element[$delta] as &$e){
-            $element[$delta] = array(
+  // Randomize
+  if($settings['random']){
+    $keys = array_keys($element);
+    shuffle($keys);
+    $random = array();
+    foreach ($keys as $key){
+      $elements = $element[$key];
+      $child_keys = array_keys($elements);
+      shuffle($child_keys);
+      foreach ($child_keys as $child_key){
+        $random[$key][$child_key] = $element[$key][$child_key];
+      }
+    }
+    $element = $random;
+  }
+
+  // Limit
+  if($settings['limit']){
+    foreach($element as $delta => $elements){
+      $element[$delta] = array_slice($element[$delta], 0, $settings['limit'], true);
+    }
+  }
+
+  // Link to content
+  if(!$use_colorbox){
+    foreach($element as $delta => &$items){
+      foreach($items as $item_delta => &$el){
+        foreach($el as $id => &$e){
+          if($settings['as_url']){
+            $e = array(
               '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
             );
           }
-        }
-        if ($settings['image_link'] == 'content') {
-          foreach($element[$delta] as &$e){
-            if(isset($e['#path']['path'])){
-              $e['#path'] = entity_uri($entity_type, $entity);
-            }
+          elseif ($settings['image_link'] == 'content') {
+            $e['#path'] = entity_uri($entity_type, $entity);
           }
-        }
-        if ($settings['image_link'] == 'file') {
-          foreach($element[$delta] as &$e){
+          elseif ($settings['image_link'] == 'file') {
             $e['#path']['path'] = file_create_url($e['#item']['uri']);
           }
-        }
-        // Nested link render
-        elseif (isset($target_link_entity_wrapper)) {
-          if(isset($target_link_entity_wrapper[$delta])){
-            $link_target_entity_wrapper = $target_link_entity_wrapper[$delta];
-            $link_target_entity_type = $link_target_entity_wrapper->type();
-            $link_target_entity = $link_target_entity_wrapper->value();
-            $link_target_items = field_get_items($link_target_entity_type, $link_target_entity, $link_target['field_name']);
-            if(isset($link_target_items[0]['url'])){
-              foreach($element[$delta] as $i => &$e){
-                $e['#path']['path'] = url($link_target_items[$i]['url']);
-                $e['#path']['options'] = $link_target_items[$i]['attributes'];
+          // Nested link render
+          elseif (isset($target_link_entity_wrapper)) {
+            if(isset($target_link_entity_wrapper[$delta])){
+              $link_target_entity_wrapper = $target_link_entity_wrapper[$delta];
+              $link_target_entity_type = $link_target_entity_wrapper->type();
+              $link_target_entity = $link_target_entity_wrapper->value();
+              $link_target_items = field_get_items($link_target_entity_type, $link_target_entity, $link_target['field_name']);
+              if(isset($link_target_items[$id]['url'])){
+                $e['#path']['path'] = url($link_target_items[$id]['url']);
+                $e['#path']['options'] = $link_target_items[$id]['attributes'];
               }
             }
           }
         }
       }
     }
-
   }
 
   return $element;
 }
+
+// /**
+//  * Implements hook_field_formatter_view().
+//  */
+// function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
+//   $settings = $display['settings'];
+//   $element = array();
+//   $use_colorbox = !empty($settings['colorbox']) && module_exists('colorbox');
+//   $target_image_entity_wrappers = array();
+//   $target_video_entity_wrappers = array();
+
+//   if(($settings['field_name'] && $image_fields = asset_entityreference_contains($field, 'image')) && isset($image_fields[$settings['field_name']])){
+//     $image_target = $image_fields[$settings['field_name']];
+//     $target_image_entity_wrappers = asset_entityreference_get($entity_type, $entity, $image_target);
+//   }
+
+//   if(($settings['field_video_name'] && $video_fields = asset_entityreference_contains($field, 'video_embed_field')) && isset($video_fields[$settings['field_video_name']])){
+//     $video_target = $video_fields[$settings['field_video_name']];
+//     $target_video_entity_wrappers = asset_entityreference_get($entity_type, $entity, $video_target);
+//   }
+
+//   if(!empty($target_image_entity_wrappers) || !empty($target_video_entity_wrappers)){
+
+//     // Randomize
+//     if($settings['random']){
+//       $keys = array_keys($items);
+//       shuffle($keys);
+//       $random = array();
+//       foreach ($keys as $key){
+//         $random[$key] = $items[$key];
+//       }
+//       $items = $random;
+//     }
+
+//     // Limit
+//     if($settings['limit']){
+//       $items = array_slice($items, 0, $settings['limit'], true);
+//     }
+
+//     // Nested link field support
+//     if (!$use_colorbox && !in_array($settings['image_link'], array('content','file'))) {
+//       $link_fields = asset_field_contains($field, $instance, 'link_field');
+//       if(isset($link_fields[$settings['image_link']])){
+//         $link_target = $link_fields[$settings['image_link']];
+//         $target_link_entity_wrapper = asset_entityreference_get($entity_type, $entity, $link_target);
+//       }
+//     }
+
+//     foreach ($items as $delta => $item) {
+
+//       // Images
+//       if(isset($target_image_entity_wrappers[$delta])){
+//         $target_field = $image_target['field'];
+//         $target_instance = $image_target['instance'];
+//         $target_entity_wrapper = $target_image_entity_wrappers[$delta];
+//         $target_entity_type = $target_entity_wrapper->type();
+//         $target_entity = $target_entity_wrapper->value();
+//         if(!$target_entity) continue;
+
+//         $target_items = field_get_items($target_entity_type, $target_entity, $image_target['field_name']);
+//         if($target_items){
+//           module_load_include('inc', 'image', 'image.field');
+
+//           if($use_colorbox){
+//             $element[$delta] = colorbox_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+//           }
+//           else{
+//             $element[$delta] = image_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, $display);
+//           }
+
+//           if($settings['as_bg']){
+//             foreach($element[$delta] as &$el){
+//               $el['#original_theme'] = $el['#theme'];
+//               $el['#theme'] = 'asset_image_bg';
+//               $el['#attributes']['class'][] = $settings['as_bg_class'];
+//             }
+//           }
+//         }
+//       }
+
+//       // Videos
+//       if(isset($target_video_entity_wrappers[$delta])){
+//         $target_field = $video_target['field'];
+//         $target_instance = $video_target['instance'];
+//         $target_entity_wrapper = $target_video_entity_wrappers[$delta];
+//         $target_entity_type = $target_entity_wrapper->type();
+//         $target_entity = $target_entity_wrapper->value();
+//         if(!$target_entity) continue;
+
+//         $target_items = field_get_items($target_entity_type, $target_entity, $video_target['field_name']);
+//         if($target_items){
+//           module_load_include('inc', 'video_embed_field', 'video_embed_field.field');
+//           $element[$delta] = video_embed_field_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, array('type' => 'video_embed_field_thumbnail') + $display);
+
+//         }
+//       }
+
+//       if(!$use_colorbox){
+//         if($settings['as_url']){
+//           foreach($element[$delta] as &$e){
+//             $element[$delta] = array(
+//               '#markup' => !empty($e['#image_style']) ? image_style_url($e['#image_style'], $e['#item']['uri']) : file_create_url($e['#item']['uri'])
+//             );
+//           }
+//         }
+//         if ($settings['image_link'] == 'content') {
+//           foreach($element[$delta] as &$e){
+//             if(isset($e['#path']['path'])){
+//               $e['#path'] = entity_uri($entity_type, $entity);
+//             }
+//           }
+//         }
+//         if ($settings['image_link'] == 'file') {
+//           foreach($element[$delta] as &$e){
+//             $e['#path']['path'] = file_create_url($e['#item']['uri']);
+//           }
+//         }
+//         // Nested link render
+//         elseif (isset($target_link_entity_wrapper)) {
+//           if(isset($target_link_entity_wrapper[$delta])){
+//             $link_target_entity_wrapper = $target_link_entity_wrapper[$delta];
+//             $link_target_entity_type = $link_target_entity_wrapper->type();
+//             $link_target_entity = $link_target_entity_wrapper->value();
+//             $link_target_items = field_get_items($link_target_entity_type, $link_target_entity, $link_target['field_name']);
+//             if(isset($link_target_items[0]['url'])){
+//               foreach($element[$delta] as $i => &$e){
+//                 $e['#path']['path'] = url($link_target_items[$i]['url']);
+//                 $e['#path']['options'] = $link_target_items[$i]['attributes'];
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }
+
+//   }
+
+//   return $element;
+// }
 
 /**
  * Render a nested image field.
