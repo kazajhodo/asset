@@ -28,10 +28,16 @@
  * @see template_process()
  */
 ?>
-<<?php print $element_type; ?> class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
+<?php if($element_type): ?>
+  <<?php print $element_type; ?> class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
+<?php endif; ?>
+
   <?php print $prefix; ?>
   <?php
     print render($content);
   ?>
   <?php print $suffix; ?>
-</<?php print $element_type; ?>>
+
+<?php if($element_type): ?>
+  </<?php print $element_type; ?>>
+<?php endif; ?>

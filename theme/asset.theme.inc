@@ -264,19 +264,23 @@ function theme_asset_add_list($vars) {
  */
 function theme_asset_field($vars) {
   $output = '';
-  if (!$vars['label_hidden']) {
-    $output .= '<' . $vars['element_type'] . ' ' . $vars['title_attributes'] . '>' . $vars['label'] . (!empty($vars['no_colon']) ? '' : ':') . '&nbsp;</' . $vars['element_type'] . '>';
-  }
-  if(count($vars['items']) > 1){
-    $output .= '<' . $vars['element_type'] . ' class="field-items"' . $vars['content_attributes'] . '>';
+  if ( !empty($vars['element_type']) ) {
+    if (!$vars['label_hidden']) {
+      $output .= '<' . $vars['element_type'] . ' ' . $vars['title_attributes'] . '>' . $vars['label'] . (!empty($vars['no_colon']) ? '' : ':') . '&nbsp;</' . $vars['element_type'] . '>';
+    }
+    if(count($vars['items']) > 1){
+      $output .= '<' . $vars['element_type'] . ' class="field-items"' . $vars['content_attributes'] . '>';
+    }
   }
   foreach ($vars['items'] as $item) {
     $output .= drupal_render($item);
   }
-  if(count($vars['items']) > 1){
-    $output .= '</' . $vars['element_type'] . '>';
+  if ( !empty($vars['element_type']) ) {
+    if(count($vars['items']) > 1){
+      $output .= '</' . $vars['element_type'] . '>';
+    }
+    $output = '<' . $vars['element_type'] . ' class="' . $vars['classes'] . '"' . $vars['attributes'] . '>' . $output . '</' . $vars['element_type'] . '>';
   }
-  $output = '<' . $vars['element_type'] . ' class="' . $vars['classes'] . '"' . $vars['attributes'] . '>' . $output . '</' . $vars['element_type'] . '>';
   return $output;
 }
 
