@@ -95,7 +95,7 @@ function asset_views_default_asset_browser($asset_type) {
   $handler->display->display_options['empty']['area_text_custom']['field'] = 'area_text_custom';
   $handler->display->display_options['empty']['area_text_custom']['label'] = 'No Results Found';
   $handler->display->display_options['empty']['area_text_custom']['empty'] = TRUE;
-  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert-box messages status">No '.$asset_type->plural.' found.</div>';
+  $handler->display->display_options['empty']['area_text_custom']['content'] = '<div class="alert messages status">No '.$asset_type->plural.' found.</div>';
 
   $handler->display->display_options['fields'] = array();
   /* Field: Asset: Title */
