@@ -36,6 +36,14 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
       '#options' => $field_names,
       '#weight' => -99,
     );
+    $video_styles = video_embed_field_video_style_options(TRUE);
+    $video_styles[NULL] = t('Display as image');
+    $element['video_style'] = array(
+      '#title' => t('Video style'),
+      '#type' => 'select',
+      '#default_value' => $settings['video_style'],
+      '#options' => $video_styles,
+    );
   }
   if(!empty($element)){
     $elid   = drupal_html_id('asset_image_as_url');
@@ -99,6 +107,13 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
         '#id' => $elid . '-colorbox',
       );
       $colorbox_elements = colorbox_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
+      if(isset($element['video_style'])){
+        $colorbox_elements['colorbox_video_only'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Colorbox should only be used on videos'),
+          '#default_value' => $settings['colorbox_video_only'],
+        );
+      }
       foreach($colorbox_elements as &$el){
         $el['#states']['visible']['#' . $elid . '-colorbox'] = array('checked' => TRUE);
       }
@@ -129,6 +144,8 @@ function _asset_widget_asset_image_settings_summary($field, $instance, $view_mod
     $target['parents'][] = $target['field_name'];
     $label = implode($target['parents'], ' > ');
     $summary .= '<br>' . t('Target video field: @field', array('@field' => $label));
+    $video_styles = video_embed_field_video_style_options(FALSE);
+    $summary .= '<br>' . t('Video style: @field', array('@field' => $settings['video_style'] ? $video_styles[$settings['video_style']] : 'Thumbnail'));
   }
   if(module_exists('colorbox') && $settings['colorbox']){
     $colorbox_settings = &$instance['display'][$view_mode];
@@ -137,6 +154,9 @@ function _asset_widget_asset_image_settings_summary($field, $instance, $view_mod
       $colorbox_settings['settings']['colorbox_gallery_custom'] = t('Base Asset Delta');
     }
     $summary .= '<br>' . t('As Colorbox: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
+    if($settings['colorbox_video_only']){
+      $summary .= '<br>' . t('Colorbox for video only: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
+    }
     $summary .= '<br>' . colorbox_field_formatter_settings_summary($field, $instance, $view_mode);
   }else{
     $summary .= '<br>' . image_field_formatter_settings_summary($field, $instance, $view_mode);
@@ -191,10 +211,9 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
     if(($settings['field_name'] && $image_fields = asset_entityreference_contains($field, 'image')) && isset($image_fields[$settings['field_name']])){
       $image_target = $image_fields[$settings['field_name']];
       $target_image_entity_wrappers = asset_entityreference_get($entity_type, $entity, $image_target, $delta);
-      foreach($target_image_entity_wrappers as $child_delta => $wrapper){
+      foreach($target_image_entity_wrappers as $child_delta => $target_entity_wrapper){
         $target_field = $image_target['field'];
         $target_instance = $image_target['instance'];
-        $target_entity_wrapper = $target_image_entity_wrappers[$child_delta];
         $target_entity_type = $target_entity_wrapper->type();
         $target_entity = $target_entity_wrapper->value();
         if(!$target_entity) continue;
@@ -203,7 +222,7 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
         if($target_items){
           module_load_include('inc', 'image', 'image.field');
 
-          if($use_colorbox){
+          if($use_colorbox && empty($settings['colorbox_video_only'])){
             $display_colorbox = $display;
             if(substr($display_colorbox['settings']['colorbox_gallery'],0,5) == 'asset'){
               $display_colorbox['settings']['colorbox_gallery'] = 'custom';
@@ -239,11 +258,11 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
 
     if(($settings['field_video_name'] && $video_fields = asset_entityreference_contains($field, 'video_embed_field')) && isset($video_fields[$settings['field_video_name']])){
       $video_target = $video_fields[$settings['field_video_name']];
-      $target_video_entity_wrappers = asset_entityreference_get($entity_type, $entity, $video_target);
-      foreach($target_image_entity_wrappers as $child_delta => $wrapper){
+      $target_video_entity_wrappers = asset_entityreference_get($entity_type, $entity, $video_target, $delta);
+      foreach($target_video_entity_wrappers as $child_delta => $target_entity_wrapper){
         $target_field = $video_target['field'];
         $target_instance = $video_target['instance'];
-        $target_entity_wrapper = $target_video_entity_wrappers[$child_delta];
+        // $target_entity_wrapper = $target_video_entity_wrappers[$child_delta];
         $target_entity_type = $target_entity_wrapper->type();
         $target_entity = $target_entity_wrapper->value();
         if(!$target_entity) continue;
@@ -251,7 +270,15 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
         $target_items = field_get_items($target_entity_type, $target_entity, $video_target['field_name']);
         if($target_items){
           module_load_include('inc', 'video_embed_field', 'video_embed_field.field');
-          $element[$delta][$child_delta] = video_embed_field_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, array('type' => 'video_embed_field_thumbnail') + $display);
+          if($settings['video_style']){
+            if($use_colorbox){
+              $element[$delta][$child_delta] = video_embed_field_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, array('type' => 'video_embed_field_thumbnail_colorbox') + $display);
+            } else {
+              $element[$delta][$child_delta] = video_embed_field_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, array('type' => 'video_embed_field') + $display);
+            }
+          } else {
+            $element[$delta][$child_delta] = video_embed_field_field_formatter_view($target_entity_type, $target_entity, $target_field, $target_instance, $langcode, $target_items, array('type' => 'video_embed_field_thumbnail') + $display);
+          }
         }
       }
     }
