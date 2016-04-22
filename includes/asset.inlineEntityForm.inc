@@ -88,8 +88,8 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     if(count($field['settings']['handler_settings']['target_bundles']) == 1){
       $asset_type = asset_type_load(reset($field['settings']['handler_settings']['target_bundles']));
       $form['override_labels']['#default_value'] = true;
-      $form['label_singular']['#default_value'] = !empty($this->settings['label_singular']) ? $this->settings['label_singular'] : strtolower($asset_type->title);
-      $form['label_plural']['#default_value'] = !empty($this->settings['label_plural']) ? $this->settings['label_plural'] : strtolower($asset_type->plural);
+      $form['label_singular']['#default_value'] = !empty($this->settings['label_singular']) && $this->settings['label_singular'] != 'asset' ? $this->settings['label_singular'] : strtolower($asset_type->title);
+      $form['label_plural']['#default_value'] = !empty($this->settings['label_plural']) && $this->settings['label_plural'] != 'assets' ? $this->settings['label_plural'] : strtolower($asset_type->plural);
     }
 
     if(module_exists('manualcrop') && $targets = asset_entityreference_contains($field, 'image')){
@@ -169,6 +169,10 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     if (count($bundles) == 1) {
       $bundle = reset($bundles);
       $fields += $this->tableImage($bundle);
+    } else {
+      foreach($bundles as $bundle){
+        $fields += $this->tableImage($bundle);
+      }
     }
     if (!empty($info['entity keys']['label'])) {
       $label_key = $info['entity keys']['label'];
@@ -456,7 +460,6 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
  * Inline entity form "add existing" alter
  */
 function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
-
   $ief_id = $form['#ief_id'];
   $instance = $form_state['inline_entity_form'][$ief_id]['instance'];
   $settings = $form_state['inline_entity_form'][$ief_id]['settings'];
@@ -472,13 +475,9 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
   $bundle_count = count($settings['bundles']);
   $attributes = array();
   $attributes['class'][] = 'asset-inline-entity-browser';
-  if($bundle_count > 1){
-    $attributes['class'][] = 'multiple';
-  }
-  $form['#prefix'] = '<div'.drupal_attributes($attributes).'>';
-  $form['#suffix'] = '</div>';
 
   // Support for multiple bundles.
+  $attributes['class'][] = count($settings['bundles']) > 1 ? 'multiple' : 'single';
   foreach($settings['bundles'] as $asset_type_name){
     $asset_type = asset_type_load($asset_type_name);
     if($bundle_count > 1){
@@ -486,6 +485,8 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
     }
     $form[$asset_type_name]['browser'] = asset_type_browser($asset_type);
   }
+  $form['#prefix'] = '<div'.drupal_attributes($attributes).'>';
+  $form['#suffix'] = '</div>';
 
   $form['entity_id']['#attributes'] = array('class'=>array('asset-inline-entity'));
   $form['entity_id']['#prefix'] = '<div class="element-hidden">';
@@ -495,38 +496,6 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
   $form['actions']['ief_reference_save']['#attributes']['class'][] = 'small';
   $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'text';
   $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'small';
-
-
-  // $ief_id = $form['#ief_id'];
-  // $instance = $form_state['inline_entity_form'][$ief_id]['instance'];
-  // $settings = $form_state['inline_entity_form'][$ief_id]['form settings'];
-  // dsm($form_state['inline_entity_form'][$ief_id]);
-
-  // $entity_type = $instance['entity_type'];
-  // $field_name = $instance['field_name'];
-  // $bundle = $instance['bundle'];
-  // $field = field_info_field($field_name);
-
-  // // Only act on assets.
-  // if($field['settings']['target_type'] !== 'asset') return;
-
-  // $form['#prefix'] = '<div class="asset-inline-entity-browser">';
-  // $form['#suffix'] = '</div>';
-
-  // // @TODO allow for more than one bundle
-  // $asset_type_name = $settings['bundle'];
-  // $asset_type = asset_type_load($asset_type_name);
-
-  // $form['browser'] = asset_type_browser($asset_type);
-
-  // $form['entity_id']['#attributes'] = array('class'=>array('asset-inline-entity'));
-  // $form['entity_id']['#prefix'] = '<div class="element-hidden">';
-  // $form['entity_id']['#suffix'] = '</div>';
-
-  // $form['actions']['ief_reference_save']['#attributes']['class'][] = 'primary';
-  // $form['actions']['ief_reference_save']['#attributes']['class'][] = 'small';
-  // $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'text';
-  // $form['actions']['ief_reference_cancel']['#attributes']['class'][] = 'small';
 }
 
 /**
