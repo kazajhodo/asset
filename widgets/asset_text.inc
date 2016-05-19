@@ -203,15 +203,13 @@ function _asset_widget_asset_text_settings_summary($field, $instance, $view_mode
  * Implements hook_field_formatter_view().
  */
 function _asset_widget_asset_text_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
-  $settings = $display['settings'];
   $element = array();
-
-  $settings   = $display['settings'];
+  $settings = $display['settings'];
 
   foreach ($items as $delta => $item) {
 
     if ($settings['use_summary'] && !empty($item['summary'])) {
-      $output = $item['summary'];
+      $output = check_markup($item['summary'], $settings['format'], $langcode);
     }
     else {
       $output = $item['value'];
