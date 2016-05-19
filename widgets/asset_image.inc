@@ -305,6 +305,7 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
     foreach($element as $delta => $elements){
       $element[$delta] = array_slice($element[$delta], 0, $settings['limit'], true);
     }
+    $element = array_slice($element, 0, $settings['limit'], true);
   }
 
   // Link to content
