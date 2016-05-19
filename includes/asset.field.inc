@@ -76,7 +76,7 @@ function asset_preprocess_field(&$vars) {
     if(!empty($instance['settings']['asset']['status'])){
       $preview = !empty($entity->asset_preview);
       foreach($vars['items'] as &$data){
-        $data['#markup'] = asset_token_replace($data['#markup'], $allowed_types, 'asset', $preview);
+        $data['#markup'] = asset_token_replace($data['#markup'], $allowed_types, 'embed', $preview);
       }
     }
   }

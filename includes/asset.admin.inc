@@ -384,7 +384,7 @@ function asset_edit_form($form, &$form_state, $asset) {
 
   $form['actions']['submit'] = array(
     '#type'   => 'submit',
-    '#value'  => t('Save') . ' ' . $asset_type->title,
+    '#value'  => (!empty($asset->id) ? 'Update' : 'Save') . ' ' . $asset_type->title,
     '#submit' => $submit + array('asset_edit_form_submit'),
   );
 

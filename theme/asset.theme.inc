@@ -13,7 +13,7 @@ function _asset_preprocess_asset(&$vars) {
   $vars['classes_array'] = array();
   $vars['classes_array'][] = 'asset';
   $vars['classes_array'][] = drupal_html_class($asset->type);
-  $vars['classes_array'][] = drupal_html_class(($view_mode == 'asset' ? 'asset-vm' : $view_mode));
+  $vars['classes_array'][] = drupal_html_class(($view_mode == 'asset' ? 'embed' : $view_mode));
   $vars['classes_array'][] = $key;
   $vars['element_type'] = 'div';
 
@@ -27,7 +27,7 @@ function _asset_preprocess_asset(&$vars) {
   array_splice($vars['theme_hook_suggestions'], 1, 0, array('asset__' . $vars['view_mode']));
 
   if(!empty($asset_type->data['render_title'])){
-    $display = $vars['view_mode'];
+    $display = $vars['view_mode'] == 'asset' ? 'embed' : $vars['view_mode'];
     $extra = field_info_extra_fields('asset', $asset->type, 'display');
     if(isset($extra['title']) && !empty($extra['title']['display'][$display]['visible'])){
       $vars['content']['title'] = array(
@@ -43,7 +43,7 @@ function _asset_preprocess_asset(&$vars) {
   }
 
   // If view mode is asset, we need to process it through the enabled widgets.
-  if(in_array($vars['view_mode'], array('asset'))){
+  if(in_array($vars['view_mode'], array('embed'))){
     foreach($instance->widgets as $widget_id => $widget){
       if(!empty($asset->asset_preview)){
         $widget->instanceRenderPreview($vars);
