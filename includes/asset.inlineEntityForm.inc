@@ -31,6 +31,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     $defaults['auto_title'] = false;
     $defaults['auto_title_pattern'] = '';
     $defaults['instance_default_creation'] = false;
+    $defaults['allow_table_media'] = true;
     if(module_exists('manualcrop')){
       $field = field_info_field(arg(6));
       if(!$field){
@@ -79,10 +80,15 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       ),
       '#field_suffix' => module_exists('token') ? theme('token_tree', array('token_types' => array('asset','user'), 'dialog' => true)) : '',
     );
-    $form['instance_default_creation'] = array(
+    // $form['instance_default_creation'] = array(
+    //   '#type' => 'checkbox',
+    //   '#title' => t('Allow default instance to be created/edited'),
+    //   '#default_value' => $this->settings['instance_default_creation'],
+    // );
+    $form['allow_table_media'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Allow default instance to be created/edited'),
-      '#default_value' => $this->settings['instance_default_creation'],
+      '#title' => t('Show media thumbnails in the editor table UI'),
+      '#default_value' => $this->settings['allow_table_media'],
     );
 
     if(count($field['settings']['handler_settings']['target_bundles']) == 1){
@@ -165,15 +171,18 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
 
     $fields = array();
 
-    // If only one product type is allowed, its fields can be used as columns.
-    if (count($bundles) == 1) {
-      $bundle = reset($bundles);
-      $fields += $this->tableImage($bundle);
-    } else {
-      foreach($bundles as $bundle){
+    if(!empty($this->settings['allow_table_media'])) {
+      // If only one product type is allowed, its fields can be used as columns.
+      if (count($bundles) == 1) {
+        $bundle = reset($bundles);
         $fields += $this->tableImage($bundle);
+      } else {
+        foreach($bundles as $bundle){
+          $fields += $this->tableImage($bundle);
+        }
       }
     }
+
     if (!empty($info['entity keys']['label'])) {
       $label_key = $info['entity keys']['label'];
       $fields[$label_key] = array(
