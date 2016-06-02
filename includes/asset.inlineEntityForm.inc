@@ -32,6 +32,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
     $defaults['auto_title_pattern'] = '';
     $defaults['instance_default_creation'] = false;
     $defaults['allow_table_media'] = true;
+    $defaults['allow_table_status'] = false;
     if(module_exists('manualcrop')){
       $field = field_info_field(arg(6));
       if(!$field){
@@ -89,6 +90,11 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
       '#type' => 'checkbox',
       '#title' => t('Show media thumbnails in the editor table UI'),
       '#default_value' => $this->settings['allow_table_media'],
+    );
+    $form['allow_table_status'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show published status in the editor table UI'),
+      '#default_value' => $this->settings['allow_table_status'],
     );
 
     if(count($field['settings']['handler_settings']['target_bundles']) == 1){
@@ -205,6 +211,16 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         'type' => 'property',
         'label' => $metadata ? $metadata['properties'][$bundle_key]['label'] : t('Type'),
         'weight' => 2,
+      );
+    }
+
+    if(!empty($this->settings['allow_table_status'])) {
+      // $label_key = $info['entity keys']['status'];
+      $fields['status'] = array(
+        'type' => 'property',
+        'label' => t('Status'),
+        'sanitized' => TRUE,
+        'weight' => 1,
       );
     }
 
@@ -347,7 +363,7 @@ class AssetInlineEntityFormController extends EntityInlineEntityFormController{
         $entity_form['status'] = array(
           '#type'          => 'checkbox',
           '#title'         => t('Published'),
-          '#default_value' => $asset->status,
+          '#default_value' => $entity->status,
           '#weight' => isset($extra['status']['weight']) ? $extra['status']['weight'] : 100,
         );
       }

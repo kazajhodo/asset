@@ -167,10 +167,10 @@ function asset_views_plugins() {
  */
 function asset_views_pre_view(&$view, &$display_id, &$args){
   if(substr($view->name, 0, 13) == 'asset_browser' && !empty($args[0])){
-    // Argument 0 determines whether we load javascript entity outputs for
+    // Argument 1 determines whether we load javascript entity outputs for
     // the assets in the browser window.
-    $view->asset_js_load = $args[0];
-    $view->asset_view_mode = $args[1];
-    $view->asset_preview = $args[2];
+    $view->asset_js_load = $args[1];
+    $view->asset_view_mode = $args[2];
+    $view->asset_preview = $args[3];
   }
 }

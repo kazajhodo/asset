@@ -445,6 +445,9 @@ function asset_permission() {
       "view own $type_name asset" => array(
         'title' => t('%type_name: View own asset', array('%type_name' => $asset_type->title)),
       ),
+      "view unpublished $type_name asset" => array(
+        'title' => t('%type_name: View unpublished asset', array('%type_name' => $asset_type->title)),
+      ),
       "delete any $type_name asset" => array(
         'title' => t('%type_name: Delete any asset', array('%type_name' => $asset_type->title)),
       ),
@@ -485,10 +488,10 @@ function asset_access($op, $asset = NULL, $account = NULL) {
   if (user_access('administer assets', $account)) {
     return true;
   }
+  $op = in_array($op, array('edit', 'view', 'delete')) ? $op : 'edit';
   if (isset($asset) && is_object($asset) && $type_name = $asset->type) {
-    $op = ($op == 'view') ? 'view' : 'edit';
-    if (user_access("$op any $type_name asset", $account)) {
-      return true;
+    if ($op == 'view' && !$asset->status && !user_access("$op unpublished $type_name asset", $account)) {
+      return false;
     }
     if (user_access("$op any $type_name asset", $account)) {
       return true;
@@ -498,8 +501,10 @@ function asset_access($op, $asset = NULL, $account = NULL) {
     }
   }
   elseif (isset($asset) && is_string($asset) && $type_name = $asset) {
-    $op = ($op == 'view') ? 'view' : 'edit';
     if (user_access("$op any $type_name asset", $account)) {
+      return true;
+    }
+    if ($account && $op == 'edit' && user_access("$op own $type_name asset", $account)) {
       return true;
     }
   }
@@ -882,6 +887,8 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
   $display_id = 'default';
   $args = array();
   if($view = views_get_view($view_name)){
+    global $user;
+    $args[] = user_access('edit any '.$asset_type->type.' asset') ? NULL : $user->uid;
     $args[] = $js_load_assets; // Load js assets
     $args[] = $view_mode; // View Mode
     $args[] = true; // Asset Preview
