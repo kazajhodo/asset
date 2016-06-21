@@ -38,6 +38,7 @@
   font-size:11px;
   line-height:11px;
   padding:5px;
+  z-index: 1;
 }
 
 .asset-browser .asset-browser-items .asset.file.icon{

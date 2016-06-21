@@ -885,14 +885,14 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
 
   $view_name = 'asset_browser_' . $asset_type->type;
   $display_id = 'default';
-  $args = array();
+  $view_args = array();
   if($view = views_get_view($view_name)){
     global $user;
-    $args[] = user_access('edit any '.$asset_type->type.' asset') ? NULL : $user->uid;
-    $args[] = $js_load_assets; // Load js assets
-    $args[] = $view_mode; // View Mode
-    $args[] = true; // Asset Preview
-    $view->set_arguments($args);
+    $view_args[] = user_access('edit any '.$asset_type->type.' asset') ? 'all' : $user->uid;
+    $view_args[] = $js_load_assets; // Load js assets
+    $view_args[] = $view_mode; // View Mode
+    $view_args[] = true; // Asset Preview
+    $view->set_arguments($view_args);
     $view->set_display($display_id);
     // $view->set_display($asset_type->type);
     // $view->set_items_per_page($results_per_page);
@@ -900,7 +900,7 @@ function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_l
     $count = count($view->result);
     // $view->asset_view_mode = $view_mode;
     // $view->asset_preview = true;
-    $output['view']['#markup'] = $view->preview($display_id, $args);
+    $output['view']['#markup'] = $view->preview($display_id, $view_args);
     $view->destroy();
   }
   else{

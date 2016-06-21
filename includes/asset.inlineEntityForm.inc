@@ -503,12 +503,21 @@ function _asset_inline_entity_form_reference_form_alter(&$form, &$form_state){
 
   // Support for multiple bundles.
   $attributes['class'][] = count($settings['bundles']) > 1 ? 'multiple' : 'single';
+  if($bundle_count > 1){
+    $form['types'] = array(
+      '#type' => 'vertical_tabs',
+      '#weight' => -10,
+    );
+  }
   foreach($settings['bundles'] as $asset_type_name){
     $asset_type = asset_type_load($asset_type_name);
     if($bundle_count > 1){
-      $form[$asset_type_name]['title']['#markup'] = '<div class="asset-inline-entity-title">'.t('Existing %type', array('%type' => $asset_type->plural)).'</div>';
+      $form['types'][$asset_type_name] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Existing %type', array('%type' => $asset_type->plural)),
+      );
     }
-    $form[$asset_type_name]['browser'] = asset_type_browser($asset_type);
+    $form['types'][$asset_type_name]['browser'] = asset_type_browser($asset_type);
   }
   $form['#prefix'] = '<div'.drupal_attributes($attributes).'>';
   $form['#suffix'] = '</div>';
