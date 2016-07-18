@@ -51,6 +51,7 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
     $element += image_field_formatter_settings_form($field, $instance, $view_mode, $form, $form_state);
 
     $element['image_link']['#weight'] = 100;
+    $element['image_link']['#id'] = $elid . '-link';
     $element['image_link']['#states'] = array(
       'visible' => array(
         '#' . $elid => array('checked' => FALSE),
@@ -60,6 +61,19 @@ function _asset_widget_asset_image_settings_form($field, $instance, $view_mode, 
     foreach($links as $key => $target){
       $target['parents'][] = $target['field_name'];
       $element['image_link']['#options'][$key] = $target['instance']['label'] . ' [' . implode($target['parents'], ' > ') . ']';
+    }
+    if (module_exists('file_force')) {
+      $element['force_download'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Force Download'),
+        '#default_value' => $settings['force_download'],
+        '#weight' => 101,
+        '#states' => array(
+          'visible' => array(
+            '#' . $elid . '-link' => array('value' => 'file'),
+          ),
+        ),
+      );
     }
     $element['as_url'] = array(
       '#type' => 'checkbox',
@@ -171,6 +185,9 @@ function _asset_widget_asset_image_settings_summary($field, $instance, $view_mod
         $label = implode($target['parents'], ' > ');
         $summary .= '<br>' . t('Linked to: @field', array('@field' => $label));
       }
+    }
+    if (module_exists('file_force') && $settings['image_link'] && $settings['image_link'] == 'file' && $settings['force_download']) {
+      $summary .= '<br>' . t('Force download: !icon', array('!icon' => '<i class="fa fa-check text-success"></i>'));
     }
   }
   if($settings['as_bg']){
@@ -309,7 +326,18 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
   }
 
   // Link to content
-  if(!$use_colorbox){
+  if($use_colorbox){
+    foreach($element as $delta => &$items){
+      foreach($items as $item_delta => &$el){
+        foreach($el as $id => &$e){
+          if (module_exists('file_force') && $settings['force_download']) {
+            $e['#prefix'] = '<div class="field-item">';
+            $e['#suffix'] = l('Download', file_create_url($e['#item']['uri']), array('attributes' => array('class' => array('download')), 'query' => array('download' => 1))) . '</div>';
+          }
+        }
+      }
+    }
+  } else {
     foreach($element as $delta => &$items){
       foreach($items as $item_delta => &$el){
         foreach($el as $id => &$e){
@@ -323,6 +351,10 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
           }
           elseif ($settings['image_link'] == 'file') {
             $e['#path']['path'] = file_create_url($e['#item']['uri']);
+
+            if (module_exists('file_force') && $settings['force_download']) {
+              $e['#path']['options']['query']['download'] = 1;
+            }
           }
           // Nested link render
           elseif (isset($target_link_entity_wrapper)) {
