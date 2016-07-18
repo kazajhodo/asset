@@ -5,12 +5,12 @@ Drupal.behaviors.asset_widget_display = {
     var self = this;
     $('body').once('asset-full').each(function(){
       $(window).on('resize', function(){
-        $('.asset-full').each(function(){
+        $('.asset-full:not(.cke_widget_element)').each(function(){
           self.align($(this));
         });
       });
     });
-    $('.asset-full', context).once('asset-full').each(function(){
+    $('.asset-full:not(.cke_widget_element)', context).once('asset-full').each(function(){
       self.align($(this));
     });
   },
