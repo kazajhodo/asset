@@ -74,10 +74,13 @@ function asset_field_formatter_info() {
       'settings' => array('icon' => 'file', 'label' => 'Download', 'field_name' => ''),
     ),
   );
-  if(module_exists('colorbox')){
+  if (module_exists('colorbox')) {
     $settings = colorbox_field_formatter_info();
     $info['asset_image']['settings']['colorbox'] = false;
     $info['asset_image']['settings'] += $settings['colorbox']['settings'];
+  }
+  if (module_exists('file_force')) {
+    $info['asset_image']['settings']['force_download'] = false;
   }
   return $info;
 }
