@@ -874,7 +874,11 @@ function asset_admin_paths() {
  */
 function asset_type_browser(AssetType $asset_type, $view_mode = 'default', $js_load_assets = false){
   $output = array();
-  $output['#prefix'] = '<div class="asset-browser clearfix">';
+  $attributes = array('class' => array('asset-browser', 'clearfix'));
+  if ($js_load_assets) {
+    $attributes['class'][] = 'assets-loaded';
+  }
+  $output['#prefix'] = '<div'.drupal_attributes($attributes).'>';
   $output['#suffix'] = '</div>';
 
   $output['#attached']['library'][] = array('system', 'drupal.ajax');
