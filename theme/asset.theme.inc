@@ -13,7 +13,7 @@ function _asset_preprocess_asset(&$vars) {
   $vars['classes_array'] = array();
   $vars['classes_array'][] = 'asset';
   $vars['classes_array'][] = drupal_html_class($asset->type);
-  $vars['classes_array'][] = drupal_html_class(($view_mode == 'asset' ? 'embed' : $view_mode));
+  $vars['classes_array'][] = drupal_html_class($view_mode);
   $vars['classes_array'][] = $key;
   $vars['element_type'] = 'div';
 
@@ -43,7 +43,7 @@ function _asset_preprocess_asset(&$vars) {
   }
 
   // If view mode is asset, we need to process it through the enabled widgets.
-  if(in_array($vars['view_mode'], array('embed'))){
+  if(substr($vars['view_mode'], 0, 5) === 'embed'){
     foreach($instance->widgets as $widget_id => $widget){
       if(!empty($asset->asset_preview)){
         $widget->instanceRenderPreview($vars);
