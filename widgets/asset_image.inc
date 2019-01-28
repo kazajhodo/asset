@@ -364,6 +364,8 @@ function _asset_widget_asset_image_view($entity_type, $entity, $field, $instance
               $link_target_entity = $link_target_entity_wrapper->value();
               $link_target_items = field_get_items($link_target_entity_type, $link_target_entity, $link_target['field_name']);
               if(isset($link_target_items[$id]['url'])){
+                $e['#path'] = [];
+
                 $e['#path']['path'] = url($link_target_items[$id]['url']);
                 $e['#path']['options'] = $link_target_items[$id]['attributes'];
               }

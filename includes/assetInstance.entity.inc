@@ -7,8 +7,11 @@ class AssetInstance extends Entity {
 
   public $type;
 
+  public $data;
+
   public function __construct($values = array()) {
     parent::__construct($values, 'asset_instance');
+    $this->data = array();
   }
 
   protected function defaultLabel() {
